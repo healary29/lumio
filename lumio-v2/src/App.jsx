@@ -601,18 +601,135 @@ function ProfilePage({userId,me,isOwn,goProfile,showNotif}){
   );
 }
 
+// ── CHEVRON ICON ─────────────────────────────────────────────
+const ChevronRight = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>;
+const ChevronLeft  = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>;
+
+// ── ACCOUNT DELETION SUB-PAGE ─────────────────────────────────
+function AccountDeletionPage({ me, logout, onBack }) {
+  const [step, setStep] = useState(1);
+  const [confirmText, setConfirmText] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const handleDelete = async () => {
+    if (confirmText !== "DELETE") return setErr('Please type DELETE in capitals to confirm.');
+    if (!password) return setErr("Please enter your password.");
+    setBusy(true); setErr("");
+    // Re-authenticate first
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error: signInErr } = await supabase.auth.signInWithPassword({ email: user.email, password });
+    if (signInErr) { setErr("Incorrect password. Try again."); setBusy(false); return; }
+    // Delete profile (cascade deletes everything)
+    await supabase.from("profiles").delete().eq("id", me.id);
+    await supabase.auth.signOut();
+    logout();
+  };
+
+  return (
+    <div className="page">
+      {/* Back button */}
+      <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,color:"var(--muted)",fontSize:14,fontWeight:600,background:"none",border:"none",cursor:"pointer",marginBottom:24,padding:0}}>
+        <ChevronLeft/> Back to Settings
+      </button>
+
+      <div style={{fontSize:22,fontWeight:700,marginBottom:4}}>Account Deletion</div>
+      <div style={{fontSize:14,color:"var(--muted)",marginBottom:28}}>This action is permanent and cannot be undone.</div>
+
+      {/* Step 1 — Warning */}
+      {step === 1 && (
+        <>
+          <div style={{background:"#fff8f0",border:"1.5px solid #ffd6a5",borderRadius:"var(--radius)",padding:24,marginBottom:20}}>
+            <div style={{fontSize:15,fontWeight:700,marginBottom:12,color:"#c05c00"}}>⚠️ Before you delete your account</div>
+            <div style={{fontSize:14,color:"#7a4000",lineHeight:1.8}}>
+              Deleting your account will permanently remove:<br/>
+              • Your profile and username<br/>
+              • All your posts and videos<br/>
+              • All your likes and comments<br/>
+              • All your messages and conversations<br/>
+              • All your followers and following<br/><br/>
+              <strong>This cannot be reversed. Ever.</strong>
+            </div>
+          </div>
+          <div style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:"var(--radius)",padding:24,marginBottom:20}}>
+            <div style={{fontSize:14,fontWeight:600,marginBottom:12}}>Consider these alternatives first:</div>
+            <div style={{fontSize:13,color:"var(--muted)",lineHeight:1.9}}>
+              • 🔒 Change your password if your account was compromised<br/>
+              • 👤 Update your username and bio for a fresh start<br/>
+              • 🔕 Simply stop using the app — your data stays safe
+            </div>
+          </div>
+          <button onClick={()=>setStep(2)} style={{width:"100%",padding:"14px",background:"var(--bg)",border:"1.5px solid var(--border)",borderRadius:"var(--radius)",fontSize:15,fontWeight:600,color:"var(--text)",cursor:"pointer",marginBottom:12}}>
+            I understand, continue anyway →
+          </button>
+        </>
+      )}
+
+      {/* Step 2 — Confirm */}
+      {step === 2 && (
+        <>
+          <div style={{background:"#fff0f2",border:"1.5px solid #ffd0d8",borderRadius:"var(--radius)",padding:24,marginBottom:24}}>
+            <div style={{fontSize:15,fontWeight:700,color:"var(--accent3)",marginBottom:16}}>🗑️ Confirm Account Deletion</div>
+
+            <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",marginBottom:6,textTransform:"uppercase",letterSpacing:".5px"}}>Type DELETE to confirm</div>
+            <input
+              style={{width:"100%",background:"var(--bg)",border:`1.5px solid ${confirmText==="DELETE"?"var(--green)":"var(--border)"}`,borderRadius:10,padding:"11px 14px",fontSize:15,marginBottom:20,fontFamily:"inherit",outline:"none",transition:"border .2s"}}
+              placeholder='Type DELETE here'
+              value={confirmText}
+              onChange={e=>setConfirmText(e.target.value)}
+            />
+
+            <div style={{fontSize:13,fontWeight:600,color:"var(--muted)",marginBottom:6,textTransform:"uppercase",letterSpacing:".5px"}}>Enter your password</div>
+            <input
+              type="password"
+              style={{width:"100%",background:"var(--bg)",border:"1.5px solid var(--border)",borderRadius:10,padding:"11px 14px",fontSize:15,marginBottom:20,fontFamily:"inherit",outline:"none"}}
+              placeholder="Your current password"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+            />
+
+            {err && <div style={{color:"var(--accent3)",fontSize:13,marginBottom:12}}>{err}</div>}
+
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setStep(1)} style={{flex:1,padding:"12px",background:"var(--bg)",border:"1.5px solid var(--border)",borderRadius:"var(--radius-sm)",fontSize:14,fontWeight:600,cursor:"pointer"}}>
+                Go Back
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={busy || confirmText !== "DELETE" || !password}
+                style={{flex:1,padding:"12px",background:confirmText==="DELETE"&&password?"var(--accent3)":"#ffd0d8",color:confirmText==="DELETE"&&password?"#fff":"#ffaab8",border:"none",borderRadius:"var(--radius-sm)",fontSize:14,fontWeight:700,cursor:confirmText==="DELETE"&&password?"pointer":"not-allowed",transition:"all .2s"}}>
+                {busy ? <span className="spinner"/> : "🗑️ Delete Forever"}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── SETTINGS MAIN PAGE ────────────────────────────────────────
 function SettingsPage({me,setProfile,showNotif,logout}){
-  const[form,setForm]=useState({name:me.name,username:me.username,bio:me.bio||""});
-  const[passwords,setPw]=useState({newPw:"",confirm:""});
-  const[saving,setSaving]=useState(false);const[showDelete,setShowDelete]=useState(false);const fileRef=useRef();
-  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));const setP=k=>e=>setPw(p=>({...p,[k]:e.target.value}));
+  const [subPage, setSubPage] = useState(null); // null = main settings
+  const [form,setForm]=useState({name:me.name,username:me.username,bio:me.bio||""});
+  const [passwords,setPw]=useState({newPw:"",confirm:""});
+  const [saving,setSaving]=useState(false);
+  const fileRef=useRef();
+  const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
+  const setP=k=>e=>setPw(p=>({...p,[k]:e.target.value}));
   const saveProfile=async()=>{setSaving(true);const{data,error}=await supabase.from("profiles").update({name:form.name,username:form.username.toLowerCase(),bio:form.bio}).eq("id",me.id).select().single();if(error)showNotif(error.message,true);else{setProfile(data);showNotif("Profile updated ✓");}setSaving(false);};
   const changePw=async()=>{if(!passwords.newPw)return showNotif("Enter a new password",true);if(passwords.newPw!==passwords.confirm)return showNotif("Passwords don't match",true);const{error}=await supabase.auth.updateUser({password:passwords.newPw});if(error)showNotif(error.message,true);else{showNotif("Password updated ✓");setPw({newPw:"",confirm:""});}};
   const uploadAvatar=async e=>{const file=e.target.files[0];if(!file)return;const ext=file.name.split(".").pop();const path=`${me.id}/avatar.${ext}`;await supabase.storage.from("avatars").upload(path,file,{upsert:true});const{data:{publicUrl}}=supabase.storage.from("avatars").getPublicUrl(path);const{data,error}=await supabase.from("profiles").update({avatar_url:publicUrl+"?t="+Date.now()}).eq("id",me.id).select().single();if(!error){setProfile(data);showNotif("Avatar updated ✓");}};
-  const deleteAccount=async()=>{await supabase.from("profiles").delete().eq("id",me.id);await supabase.auth.signOut();logout();};
+
+  // Show sub-page if active
+  if (subPage === "delete") return <AccountDeletionPage me={me} logout={logout} onBack={()=>setSubPage(null)} />;
+
   return(
     <div className="page">
       <div style={{fontSize:22,fontWeight:700,marginBottom:24}}>Settings</div>
+
+      {/* Profile */}
       <div className="settings-section">
         <div className="settings-title">👤 Profile</div>
         <div className="settings-row"><div><div className="settings-label">Profile Picture</div><div className="settings-sub">JPG or PNG</div></div><div style={{display:"flex",alignItems:"center",gap:12}}><Avatar profile={me} size={48}/><button className="btn-outline" style={{fontSize:13,padding:"8px 14px"}} onClick={()=>fileRef.current.click()}>Change</button><input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={uploadAvatar}/></div></div>
@@ -621,24 +738,33 @@ function SettingsPage({me,setProfile,showNotif,logout}){
         <div className="settings-row"><div className="settings-label">Bio</div><input className="settings-input" value={form.bio} onChange={set("bio")} placeholder="Tell people about yourself…"/></div>
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><button className="btn-save" disabled={saving} onClick={saveProfile}>{saving?<span className="spinner"/>:"Save Changes"}</button></div>
       </div>
+
+      {/* Password */}
       <div className="settings-section">
         <div className="settings-title">🔒 Change Password</div>
         <div className="settings-row"><div className="settings-label">New Password</div><input className="settings-input" type="password" placeholder="••••••••" value={passwords.newPw} onChange={setP("newPw")}/></div>
         <div className="settings-row"><div className="settings-label">Confirm Password</div><input className="settings-input" type="password" placeholder="••••••••" value={passwords.confirm} onChange={setP("confirm")}/></div>
         <div style={{display:"flex",justifyContent:"flex-end",marginTop:16}}><button className="btn-save" onClick={changePw}>Update Password</button></div>
       </div>
+
+      {/* More Options — Account Deletion hidden inside */}
       <div className="settings-section">
-        <div className="settings-title" style={{color:"var(--accent3)"}}>⚠️ Danger Zone</div>
-        <div className="settings-row"><div><div className="settings-label">Delete Account</div><div className="settings-sub">Permanent — cannot be undone</div></div><button className="btn-danger" onClick={()=>setShowDelete(true)}>Delete Account</button></div>
+        <div className="settings-title">⚙️ More Options</div>
+        <div className="settings-row" style={{cursor:"pointer"}} onClick={()=>setSubPage("delete")}>
+          <div>
+            <div className="settings-label" style={{color:"var(--muted)"}}>Account Deletion</div>
+            <div className="settings-sub">Manage account removal options</div>
+          </div>
+          <ChevronRight/>
+        </div>
       </div>
 
-      {/* LOGOUT */}
+      {/* Logout */}
       <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"16px",borderRadius:"var(--radius)",background:"#fff0f2",border:"1.5px solid #ffd0d8",color:"var(--accent3)",fontWeight:700,fontSize:15,marginBottom:32,transition:"all .18s"}}
-        onMouseOver={e=>e.currentTarget.style.background="var(--accent3)"||e.currentTarget.style.color="#fff"}
-        onMouseOut={e=>e.currentTarget.style.background="#fff0f2"||e.currentTarget.style.color="var(--accent3)"}>
+        onMouseOver={e=>{e.currentTarget.style.background="var(--accent3)";e.currentTarget.style.color="#fff";}}
+        onMouseOut={e=>{e.currentTarget.style.background="#fff0f2";e.currentTarget.style.color="var(--accent3)";}}>
         <icons.Logout/> Log Out
       </button>
-      {showDelete&&<div className="modal-bg" onClick={()=>setShowDelete(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div className="modal-title">Delete your account?</div><p style={{color:"var(--muted)",fontSize:14,lineHeight:1.6}}>This will permanently delete your profile, posts, videos and all data.</p><div className="modal-actions"><button className="btn-outline" onClick={()=>setShowDelete(false)}>Cancel</button><button className="btn-danger" onClick={deleteAccount}>Yes, delete everything</button></div></div></div>}
     </div>
   );
 }
