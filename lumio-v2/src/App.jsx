@@ -30,18 +30,48 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .btn-primary:hover { opacity:.85; transform:translateY(-1px); } .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
 .auth-err { color:var(--accent3); font-size:13px; text-align:center; margin-top:12px; }
 .auth-ok { color:var(--green); font-size:13px; text-align:center; margin-top:12px; }
-.app { display:flex; min-height:100vh; }
-.sidebar { width:240px; background:var(--surface); border-right:1.5px solid var(--border); position:fixed; top:0; left:0; height:100vh; display:flex; flex-direction:column; padding:28px 16px; z-index:100; }
-.sidebar-logo { font-family:'Playfair Display',serif; font-size:28px; padding:0 12px 28px; background:linear-gradient(135deg,#1a1a1a,#3d5afe); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-.nav-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:var(--radius-sm); color:var(--muted); font-size:15px; font-weight:500; cursor:pointer; transition:all .18s; margin-bottom:2px; }
-.nav-item:hover { background:var(--bg); color:var(--text); } .nav-item.active { background:var(--accent2-light); color:var(--accent2); }
-.sidebar-bottom { margin-top:auto; }
-.sidebar-user { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:var(--radius-sm); cursor:pointer; transition:background .18s; }
-.sidebar-user:hover { background:var(--bg); }
-.sidebar-username { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.sidebar-handle { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.main { margin-left:240px; flex:1; padding:32px 24px; max-width:calc(100vw - 240px); }
-.page { max-width:620px; margin:0 auto; } .page-wide { max-width:900px; margin:0 auto; }
+.app { display:flex; flex-direction:column; min-height:100vh; }
+
+/* ── TOP HEADER ── */
+.topbar { position:fixed; top:0; left:0; right:0; height:56px; background:var(--surface); border-bottom:1.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:200; box-shadow:0 1px 12px rgba(0,0,0,0.04); }
+.topbar-logo { font-family:'Playfair Display',serif; font-size:26px; background:linear-gradient(135deg,#1a1a1a,#3d5afe); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.topbar-logout { display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:var(--bg); color:var(--muted); font-size:13px; font-weight:500; gap:6px; transition:all .18s; }
+.topbar-logout:hover { color:var(--accent3); background:#fff0f2; }
+
+/* ── BOTTOM TAB BAR ── */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0;
+  height:64px;
+  background:var(--surface);
+  border-top:1.5px solid var(--border);
+  display:flex; align-items:stretch;
+  z-index:200;
+  padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -4px 24px rgba(0,0,0,0.08);
+}
+.bottom-tab {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; flex:1;
+  color:var(--muted); font-size:10px; font-weight:600;
+  cursor:pointer; transition:all .15s;
+  background:none; border:none; letter-spacing:.3px;
+  position:relative;
+}
+.bottom-tab:hover { color:var(--text); }
+.bottom-tab.active { color:var(--accent2); }
+.bottom-tab-dot {
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:4px; height:4px; border-radius:50%;
+  background:var(--accent2);
+  animation:dotPop .2s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes dotPop { from{transform:translateX(-50%) scale(0)} to{transform:translateX(-50%) scale(1)} }
+
+/* ── MAIN CONTENT ── */
+.main { flex:1; padding:72px 16px 80px; width:100%; min-height:100vh; }
+.page { max-width:620px; margin:0 auto; }
+.page-wide { max-width:900px; margin:0 auto; }
 .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
 .feed-title { font-size:22px; font-weight:700; }
 .create-post-card { background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); padding:16px; margin-bottom:20px; }
@@ -110,7 +140,7 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .remove-media { position:absolute; top:8px; right:8px; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; border:none; }
 .upload-progress { background:var(--bg); border-radius:999px; height:6px; margin-top:10px; overflow:hidden; }
 .upload-progress-bar { height:100%; background:var(--accent2); border-radius:999px; transition:width .3s; }
-.messages-layout { display:grid; grid-template-columns:300px 1fr; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; height:calc(100vh - 120px); }
+.messages-layout { display:grid; grid-template-columns:280px 1fr; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius); overflow:hidden; height:calc(100vh - 140px); }
 .convo-list { border-right:1.5px solid var(--border2); overflow-y:auto; }
 .convo-item { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; transition:background .15s; }
 .convo-item:hover { background:var(--bg); } .convo-item.active { background:var(--accent2-light); }
@@ -204,31 +234,30 @@ export default function App() {
   if(loading)return<><style>{STYLE}</style><div className="loading-screen"><div className="loading-logo">Lumio</div><div className="spinner dark"/></div></>;
   if(!session||!profile)return<><style>{STYLE}</style><AuthScreen/></>;
 
-  const navItems=[
-    {id:"feed",label:"Home",Icon:icons.Home},{id:"search",label:"Search",Icon:icons.Search},
-    {id:"reels",label:"Reels",Icon:icons.Video},{id:"messages",label:"Messages",Icon:icons.Msg},
-    {id:"profile",label:"Profile",Icon:icons.User},{id:"settings",label:"Settings",Icon:icons.Settings},
+  const tabItems=[
+    {id:"feed",label:"Home",Icon:icons.Home},
+    {id:"search",label:"Search",Icon:icons.Search},
+    {id:"reels",label:"Reels",Icon:icons.Video},
+    {id:"messages",label:"Messages",Icon:icons.Msg},
+    {id:"profile",label:"Profile",Icon:icons.User},
+    {id:"settings",label:"Settings",Icon:icons.Settings},
   ];
 
   return(
     <><style>{STYLE}</style>
     {notif&&<div className={`notif ${notif.err?"err":""}`}>{notif.msg}</div>}
     <div className="app">
-      <aside className="sidebar">
-        <div className="sidebar-logo">Lumio</div>
-        {navItems.map(({id,label,Icon})=>(
-          <div key={id} className={`nav-item ${page===id&&!viewProfile?"active":""}`} onClick={()=>{setPage(id);if(id!=="profile")setViewProfile(null);}}>
-            <Icon/>{label}
-          </div>
-        ))}
-        <div className="sidebar-bottom">
-          <div className="sidebar-user" onClick={()=>{setViewProfile(null);setPage("profile");}}>
-            <Avatar profile={profile} size={36}/>
-            <div style={{flex:1,minWidth:0}}><div className="sidebar-username">{profile.name}</div><div className="sidebar-handle">@{profile.username}</div></div>
-          </div>
-          <div className="nav-item" style={{color:"#ff4b6e"}} onClick={logout}><icons.Logout/>Log out</div>
+
+      {/* TOP HEADER */}
+      <header className="topbar">
+        <div className="topbar-logo">Lumio</div>
+        <div className="topbar-right">
+          <Avatar profile={profile} size={32} onClick={()=>{setViewProfile(null);setPage("profile");}} style={{border:"2px solid var(--border)"}}/>
+          <button className="topbar-logout" onClick={logout}><icons.Logout/>Log out</button>
         </div>
-      </aside>
+      </header>
+
+      {/* PAGE CONTENT */}
       <main className="main">
         {page==="feed"&&<FeedPage me={profile} goProfile={goProfile} showNotif={showNotif}/>}
         {page==="search"&&<SearchPage me={profile} goProfile={goProfile} showNotif={showNotif}/>}
@@ -238,6 +267,22 @@ export default function App() {
         {page==="profile"&&viewProfile&&<ProfilePage userId={viewProfile.id} me={profile} isOwn={false} goProfile={goProfile} showNotif={showNotif}/>}
         {page==="settings"&&<SettingsPage me={profile} setProfile={setProfile} showNotif={showNotif} logout={logout}/>}
       </main>
+
+      {/* BOTTOM TAB BAR */}
+      <nav className="bottom-nav">
+        {tabItems.map(({id,label,Icon})=>{
+          const active=page===id&&!viewProfile;
+          return(
+            <button key={id} className={`bottom-tab ${active?"active":""}`}
+              onClick={()=>{setPage(id);if(id!=="profile")setViewProfile(null);}}>
+              {active&&<div className="bottom-tab-dot"/>}
+              <span style={{opacity: active ? 1 : 0.6, transform: active ? 'scale(1.12)' : 'scale(1)', transition:'all .15s'}}><Icon/></span>
+              <span style={{fontWeight: active ? 700 : 500}}>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
     </div></>
   );
 }
