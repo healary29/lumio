@@ -36,8 +36,8 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .topbar { position:fixed; top:0; left:0; right:0; height:56px; background:var(--surface); border-bottom:1.5px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 20px; z-index:200; box-shadow:0 1px 12px rgba(0,0,0,0.04); }
 .topbar-logo { font-family:'Playfair Display',serif; font-size:26px; background:linear-gradient(135deg,#1a1a1a,#3d5afe); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .topbar-right { display:flex; align-items:center; gap:10px; }
-.topbar-logout { display:flex; align-items:center; padding:7px 14px; border-radius:999px; background:var(--bg); color:var(--muted); font-size:13px; font-weight:500; gap:6px; transition:all .18s; }
-.topbar-logout:hover { color:var(--accent3); background:#fff0f2; }
+.topbar-settings { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); color:var(--muted); transition:all .18s; }
+.topbar-settings:hover { background:var(--accent2-light); color:var(--accent2); transform:rotate(45deg); }
 
 /* ── BOTTOM TAB BAR ── */
 .bottom-nav {
@@ -253,7 +253,7 @@ export default function App() {
         <div className="topbar-logo">Lumio</div>
         <div className="topbar-right">
           <Avatar profile={profile} size={32} onClick={()=>{setViewProfile(null);setPage("profile");}} style={{border:"2px solid var(--border)"}}/>
-          <button className="topbar-logout" onClick={logout}><icons.Logout/>Log out</button>
+          <button className="topbar-settings" onClick={()=>{setViewProfile(null);setPage("settings");}} title="Settings"><icons.Settings/></button>
         </div>
       </header>
 
@@ -631,6 +631,13 @@ function SettingsPage({me,setProfile,showNotif,logout}){
         <div className="settings-title" style={{color:"var(--accent3)"}}>⚠️ Danger Zone</div>
         <div className="settings-row"><div><div className="settings-label">Delete Account</div><div className="settings-sub">Permanent — cannot be undone</div></div><button className="btn-danger" onClick={()=>setShowDelete(true)}>Delete Account</button></div>
       </div>
+
+      {/* LOGOUT */}
+      <button onClick={logout} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"16px",borderRadius:"var(--radius)",background:"#fff0f2",border:"1.5px solid #ffd0d8",color:"var(--accent3)",fontWeight:700,fontSize:15,marginBottom:32,transition:"all .18s"}}
+        onMouseOver={e=>e.currentTarget.style.background="var(--accent3)"||e.currentTarget.style.color="#fff"}
+        onMouseOut={e=>e.currentTarget.style.background="#fff0f2"||e.currentTarget.style.color="var(--accent3)"}>
+        <icons.Logout/> Log Out
+      </button>
       {showDelete&&<div className="modal-bg" onClick={()=>setShowDelete(false)}><div className="modal" onClick={e=>e.stopPropagation()}><div className="modal-title">Delete your account?</div><p style={{color:"var(--muted)",fontSize:14,lineHeight:1.6}}>This will permanently delete your profile, posts, videos and all data.</p><div className="modal-actions"><button className="btn-outline" onClick={()=>setShowDelete(false)}>Cancel</button><button className="btn-danger" onClick={deleteAccount}>Yes, delete everything</button></div></div></div>}
     </div>
   );
