@@ -184,6 +184,49 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .loading-logo { font-family:'Playfair Display',serif; font-size:42px; background:linear-gradient(135deg,#1a1a1a,#3d5afe); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .empty { text-align:center; padding:60px 20px; color:var(--muted); } .empty-icon { font-size:40px; margin-bottom:12px; } .empty-text { font-size:15px; }
 .avatar { border-radius:50%; object-fit:cover; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; overflow:hidden; cursor:pointer; }
+
+/* ── PROFILE PIC VIEWER ── */
+.pic-viewer-bg { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999; display:flex; align-items:center; justify-content:center; animation:fadeIn .2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.pic-viewer-img { width:min(90vw,400px); height:min(90vw,400px); border-radius:50%; object-fit:cover; box-shadow:0 0 60px rgba(0,0,0,.8); border:3px solid rgba(255,255,255,.15); }
+.pic-viewer-initials { width:min(90vw,400px); height:min(90vw,400px); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:clamp(60px,15vw,120px); font-weight:700; color:#fff; }
+.pic-viewer-name { color:#fff; font-size:18px; font-weight:700; margin-top:20px; text-align:center; }
+.pic-viewer-handle { color:rgba(255,255,255,.6); font-size:14px; margin-top:4px; text-align:center; }
+.pic-viewer-close { position:fixed; top:20px; right:20px; background:rgba(255,255,255,.15); border:none; color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; backdrop-filter:blur(8px); font-size:20px; }
+
+/* ── MESSAGES IG STYLE ── */
+.ig-messages { display:flex; height:calc(100vh - 136px); background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); overflow:hidden; }
+.ig-convo-list { width:340px; border-right:1.5px solid var(--border2); display:flex; flex-direction:column; flex-shrink:0; }
+.ig-convo-header { padding:20px 20px 12px; font-family:'Playfair Display',serif; font-size:22px; font-weight:700; border-bottom:1.5px solid var(--border2); }
+.ig-convo-search { padding:10px 16px; border-bottom:1.5px solid var(--border2); }
+.ig-convo-search input { width:100%; background:var(--bg); border-radius:999px; padding:9px 16px; font-size:14px; color:var(--text); border:none; }
+.ig-convo-items { flex:1; overflow-y:auto; }
+.ig-convo-item { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; transition:background .15s; position:relative; }
+.ig-convo-item:hover { background:var(--bg); }
+.ig-convo-item.active { background:var(--accent2-light); }
+.ig-convo-dot { width:8px; height:8px; background:var(--accent2); border-radius:50%; position:absolute; right:16px; top:50%; transform:translateY(-50%); }
+.ig-chat { flex:1; display:flex; flex-direction:column; min-width:0; }
+.ig-chat-header { padding:14px 20px; border-bottom:1.5px solid var(--border2); display:flex; align-items:center; gap:12px; }
+.ig-chat-header-info { flex:1; }
+.ig-chat-header-name { font-size:15px; font-weight:700; }
+.ig-chat-header-handle { font-size:12px; color:var(--muted); }
+.ig-chat-messages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:4px; }
+.ig-msg-group { display:flex; flex-direction:column; margin-bottom:8px; }
+.ig-msg-group.mine { align-items:flex-end; }
+.ig-msg-group.other { align-items:flex-start; flex-direction:row; gap:8px; }
+.ig-msg-group.other .ig-msg-bubbles { align-items:flex-start; }
+.ig-msg-bubbles { display:flex; flex-direction:column; gap:2px; max-width:68%; }
+.ig-bubble { padding:10px 14px; border-radius:20px; font-size:14px; line-height:1.5; word-break:break-word; }
+.mine .ig-bubble { background:var(--accent2); color:#fff; border-bottom-right-radius:4px; }
+.other .ig-bubble { background:var(--bg); color:var(--text); border-bottom-left-radius:4px; }
+.ig-bubble:not(:last-child) { border-radius:20px; }
+.ig-msg-time { font-size:10px; color:var(--muted); margin-top:2px; padding:0 4px; }
+.ig-chat-input { padding:12px 16px; border-top:1.5px solid var(--border2); display:flex; align-items:center; gap:10px; }
+.ig-chat-input input { flex:1; background:var(--bg); border-radius:999px; padding:11px 18px; font-size:14px; border:1.5px solid var(--border); transition:border .2s; }
+.ig-chat-input input:focus { border-color:var(--accent2); outline:none; }
+.ig-send-btn { background:var(--accent2); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer; transition:opacity .18s; }
+.ig-send-btn:hover { opacity:.85; }
+.ig-no-chat { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); gap:12px; }
 `;
 
 const icons = {
@@ -205,11 +248,49 @@ const icons = {
   X: () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
 };
 
-function Avatar({ profile, size=40, onClick, style={} }) {
+// ── PROFILE PIC VIEWER ───────────────────────────────────────
+function ProfilePicViewer({ profile, onClose }) {
+  const gs = ["linear-gradient(135deg,#3d5afe,#ff4b6e)","linear-gradient(135deg,#00c48c,#3d5afe)","linear-gradient(135deg,#ff9a00,#ff4b6e)","linear-gradient(135deg,#a855f7,#3d5afe)"];
+  const g = gs[(profile?.username?.charCodeAt(0)||0) % gs.length];
+  useEffect(() => {
+    const close = e => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, []);
+  return (
+    <div className="pic-viewer-bg" onClick={onClose}>
+      <button className="pic-viewer-close" onClick={onClose}>✕</button>
+      <div style={{ display:"flex", flexDirection:"column", alignItems:"center" }} onClick={e => e.stopPropagation()}>
+        {profile?.avatar_url
+          ? <img src={profile.avatar_url} alt="" className="pic-viewer-img" />
+          : <div className="pic-viewer-initials" style={{ background: g }}>
+              {profile?.name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+            </div>
+        }
+        <div className="pic-viewer-name">{profile?.name}</div>
+        <div className="pic-viewer-handle">@{profile?.username}</div>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ profile, size=40, onClick, style={}, viewPic=false }) {
+  const [showPic, setShowPic] = useState(false);
   const initials = profile?.name?.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()||"?";
   const gs=["linear-gradient(135deg,#3d5afe,#ff4b6e)","linear-gradient(135deg,#00c48c,#3d5afe)","linear-gradient(135deg,#ff9a00,#ff4b6e)","linear-gradient(135deg,#a855f7,#3d5afe)"];
   const g=gs[(profile?.username?.charCodeAt(0)||0)%gs.length];
-  return <div className="avatar" onClick={onClick} style={{width:size,height:size,background:profile?.avatar_url?"#eee":g,fontSize:size*0.35,...style}}>{profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:initials}</div>;
+  const handleClick = e => {
+    if (viewPic) { e.stopPropagation(); setShowPic(true); return; }
+    onClick && onClick(e);
+  };
+  return (
+    <>
+      <div className="avatar" onClick={handleClick} style={{width:size,height:size,background:profile?.avatar_url?"#eee":g,fontSize:size*0.35,...style}}>
+        {profile?.avatar_url?<img src={profile.avatar_url} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:initials}
+      </div>
+      {showPic && <ProfilePicViewer profile={profile} onClose={() => setShowPic(false)} />}
+    </>
+  );
 }
 
 function timeAgo(ts){const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return"just now";if(s<3600)return`${Math.floor(s/60)}m ago`;if(s<86400)return`${Math.floor(s/3600)}h ago`;return`${Math.floor(s/86400)}d ago`;}
@@ -399,7 +480,7 @@ function FeedPage({me,goProfile,showNotif}){
         return(
           <div className="post-card" key={item.id}>
             <div className="post-head">
-              <Avatar profile={item.profiles} size={40} onClick={()=>goProfile(item.profiles)}/>
+              <Avatar profile={item.profiles} size={40} onClick={()=>goProfile(item.profiles)} viewPic/>
               <div className="post-meta">
                 <div className="post-name" onClick={()=>goProfile(item.profiles)}>{item.profiles?.name}</div>
                 <div className="post-time">@{item.profiles?.username} · {timeAgo(item.created_at)}</div>
@@ -748,25 +829,142 @@ function SearchPage({me,goProfile,showNotif}){
 }
 
 function MessagesPage({me,goProfile}){
-  const[users,setUsers]=useState([]);const[active,setActive]=useState(null);const[msgs,setMsgs]=useState([]);const[input,setInput]=useState("");const[search,setSearch]=useState("");const endRef=useRef();
+  const [users,setUsers]=useState([]);
+  const [active,setActive]=useState(null);
+  const [msgs,setMsgs]=useState([]);
+  const [input,setInput]=useState("");
+  const [search,setSearch]=useState("");
+  const endRef=useRef();
+
   useEffect(()=>{supabase.from("profiles").select("*").neq("id",me.id).then(({data})=>setUsers(data||[]));},[]);
-  useEffect(()=>{if(active)supabase.from("messages").select("*").or(`and(sender_id.eq.${me.id},receiver_id.eq.${active.id}),and(sender_id.eq.${active.id},receiver_id.eq.${me.id})`).order("created_at",{ascending:true}).then(({data})=>setMsgs(data||[]));},[active]);
+
+  useEffect(()=>{
+    if(!active)return;
+    loadMsgs();
+  },[active]);
+
+  const loadMsgs=async()=>{
+    const{data}=await supabase.from("messages").select("*")
+      .or(`and(sender_id.eq.${me.id},receiver_id.eq.${active.id}),and(sender_id.eq.${active.id},receiver_id.eq.${me.id})`)
+      .order("created_at",{ascending:true});
+    setMsgs(data||[]);
+  };
+
   useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
-  const send=async()=>{if(!input.trim()||!active)return;await supabase.from("messages").insert({sender_id:me.id,receiver_id:active.id,content:input.trim()});setInput("");if(active)supabase.from("messages").select("*").or(`and(sender_id.eq.${me.id},receiver_id.eq.${active.id}),and(sender_id.eq.${active.id},receiver_id.eq.${me.id})`).order("created_at",{ascending:true}).then(({data})=>setMsgs(data||[]));};
-  const filtered=users.filter(u=>!search||u.name.toLowerCase().includes(search.toLowerCase()));
+
+  const send=async()=>{
+    if(!input.trim()||!active)return;
+    const content=input.trim(); setInput("");
+    await supabase.from("messages").insert({sender_id:me.id,receiver_id:active.id,content});
+    loadMsgs();
+  };
+
+  // Group consecutive messages from same sender
+  const grouped=[];
+  msgs.forEach((m,i)=>{
+    const prev=msgs[i-1];
+    if(prev&&prev.sender_id===m.sender_id){
+      grouped[grouped.length-1].bubbles.push(m);
+    } else {
+      grouped.push({sender_id:m.sender_id,bubbles:[m]});
+    }
+  });
+
+  const filtered=users.filter(u=>!search||u.name.toLowerCase().includes(search.toLowerCase())||u.username.toLowerCase().includes(search.toLowerCase()));
+
   return(
     <div className="page-wide" style={{padding:0}}>
-      <div className="messages-layout">
-        <div className="convo-list">
-          <div style={{padding:"16px 16px 8px",fontWeight:700,fontSize:18}}>Messages</div>
-          <div style={{padding:"0 16px 12px"}}><input style={{width:"100%",background:"var(--bg)",borderRadius:999,padding:"10px 14px",fontSize:14,border:"none"}} placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}/></div>
-          {filtered.map(u=><div className={`convo-item ${active?.id===u.id?"active":""}`} key={u.id} onClick={()=>setActive(u)}><Avatar profile={u} size={44}/><div className="convo-info"><div className="convo-name">{u.name}</div><div className="convo-preview">@{u.username}</div></div></div>)}
+      <div className="ig-messages">
+
+        {/* LEFT — convo list */}
+        <div className="ig-convo-list">
+          <div className="ig-convo-header">Messages</div>
+          <div className="ig-convo-search">
+            <input placeholder="Search people…" value={search} onChange={e=>setSearch(e.target.value)}/>
+          </div>
+          <div className="ig-convo-items">
+            {filtered.length===0&&<div style={{padding:"20px",textAlign:"center",color:"var(--muted)",fontSize:13}}>No users found</div>}
+            {filtered.map(u=>(
+              <div className={`ig-convo-item ${active?.id===u.id?"active":""}`} key={u.id} onClick={()=>setActive(u)}>
+                <Avatar profile={u} size={48} viewPic />
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:600,fontSize:14}}>{u.name}</div>
+                  <div style={{fontSize:12,color:"var(--muted)",marginTop:1}}>@{u.username}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        {active?(<div className="chat-area">
-          <div className="chat-header"><Avatar profile={active} size={40} onClick={()=>goProfile(active)}/><div><div style={{fontWeight:600,fontSize:15}}>{active.name}</div><div style={{fontSize:12,color:"var(--muted)"}}>@{active.username}</div></div></div>
-          <div className="chat-messages">{msgs.map(m=><div className={`msg-row ${m.sender_id===me.id?"mine":"other"}`} key={m.id}>{m.sender_id!==me.id&&<Avatar profile={active} size={28}/>}<div className="msg-bubble">{m.content}</div></div>)}<div ref={endRef}/></div>
-          <div className="chat-input-bar"><input className="chat-input" placeholder="Message…" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button className="chat-send" onClick={send}><icons.Send/></button></div>
-        </div>):<div className="no-chat"><div style={{fontSize:40}}>💬</div><div style={{fontWeight:600}}>Select someone to message</div></div>}
+
+        {/* RIGHT — chat area */}
+        {active ? (
+          <div className="ig-chat">
+            {/* Chat header */}
+            <div className="ig-chat-header">
+              <Avatar profile={active} size={42} viewPic style={{border:"2px solid var(--border)"}}/>
+              <div className="ig-chat-header-info">
+                <div className="ig-chat-header-name" onClick={()=>goProfile(active)} style={{cursor:"pointer"}}>{active.name}</div>
+                <div className="ig-chat-header-handle">@{active.username}</div>
+              </div>
+              <button onClick={()=>goProfile(active)} style={{background:"none",border:"1.5px solid var(--border)",borderRadius:999,padding:"6px 14px",fontSize:13,fontWeight:600,cursor:"pointer",color:"var(--text)"}}>
+                View Profile
+              </button>
+            </div>
+
+            {/* Messages */}
+            <div className="ig-chat-messages">
+              {msgs.length===0&&(
+                <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"var(--muted)",gap:12,paddingTop:60}}>
+                  <Avatar profile={active} size={72} viewPic style={{border:"3px solid var(--border)"}}/>
+                  <div style={{fontWeight:700,fontSize:16,color:"var(--text)"}}>{active.name}</div>
+                  <div style={{fontSize:13}}>Say hi to start the conversation 👋</div>
+                </div>
+              )}
+              {grouped.map((g,gi)=>{
+                const isMine=g.sender_id===me.id;
+                const sender=isMine?me:active;
+                return(
+                  <div key={gi} className={`ig-msg-group ${isMine?"mine":"other"}`}>
+                    {!isMine&&<Avatar profile={sender} size={28} viewPic style={{marginTop:"auto",flexShrink:0}}/>}
+                    <div className="ig-msg-bubbles">
+                      {g.bubbles.map((m,bi)=>(
+                        <div key={m.id} className={`ig-bubble ${isMine?"mine":"other"}`}
+                          style={{
+                            borderRadius: g.bubbles.length===1 ? 20 :
+                              isMine
+                                ? `20px 20px ${bi===g.bubbles.length-1?"4px":"20px"} 20px`
+                                : `20px 20px 20px ${bi===g.bubbles.length-1?"4px":"20px"}`,
+                          }}>
+                          {m.content}
+                        </div>
+                      ))}
+                      <div className="ig-msg-time">{timeAgo(g.bubbles[g.bubbles.length-1].created_at)}</div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={endRef}/>
+            </div>
+
+            {/* Input */}
+            <div className="ig-chat-input">
+              <Avatar profile={me} size={32}/>
+              <input
+                placeholder={`Message ${active.name.split(" ")[0]}…`}
+                value={input}
+                onChange={e=>setInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&send()}
+              />
+              <button className="ig-send-btn" onClick={send}><icons.Send/></button>
+            </div>
+          </div>
+        ) : (
+          <div className="ig-no-chat">
+            <div style={{fontSize:48,marginBottom:8}}>💬</div>
+            <div style={{fontWeight:700,fontSize:16}}>Your Messages</div>
+            <div style={{fontSize:13,color:"var(--muted)",marginTop:4}}>Select a person to start chatting</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -797,7 +995,7 @@ function ProfilePage({userId,me,isOwn,goProfile,showNotif}){
       <div className="profile-card">
         <div className="profile-cover"/>
         <div className="profile-info">
-          <div className="profile-avatar-wrap"><Avatar profile={profile} size={80} style={{border:"4px solid var(--surface)"}}/><div className="profile-actions">{!isOwn&&<button className={isFollowing?"btn-outline":"btn-blue"} onClick={toggleFollow}>{isFollowing?"Following":"Follow"}</button>}{isOwn&&<button className="btn-outline">Edit Profile</button>}</div></div>
+          <div className="profile-avatar-wrap"><Avatar profile={profile} size={80} viewPic style={{border:"4px solid var(--surface)"}}/><div className="profile-actions">{!isOwn&&<button className={isFollowing?"btn-outline":"btn-blue"} onClick={toggleFollow}>{isFollowing?"Following":"Follow"}</button>}{isOwn&&<button className="btn-outline">Edit Profile</button>}</div></div>
           <div className="profile-name">{profile.name}</div><div className="profile-handle">@{profile.username}</div>
           {profile.bio&&<div className="profile-bio">{profile.bio}</div>}
           <div className="profile-stats"><div><div className="stat-num">{posts.length+videos.length}</div><div className="stat-label">Posts</div></div><div><div className="stat-num">{followers}</div><div className="stat-label">Followers</div></div><div><div className="stat-num">{following}</div><div className="stat-label">Following</div></div></div>
