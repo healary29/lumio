@@ -489,7 +489,7 @@ function FeedPage({me,goProfile,showNotif}){
             {iv&&<span className="video-badge"><icons.Vid/>Short Video</span>}
             {(item.content||item.caption)&&<div className="post-body">{item.content||item.caption}</div>}
             {!iv&&item.image_url&&<img src={item.image_url} alt="" className="post-image"/>}
-            {iv&&item.video_url&&<video className="post-video" src={item.video_url} controls preload="metadata"/>}
+            {iv&&item.video_url&&<FeedVideoItem src={item.video_url}/>}
             <div className="post-actions">
               <button className={`action-btn ${liked?"liked":""}`} onClick={()=>toggleLike(item)}><icons.Heart filled={liked}/>{likes?.length||0}</button>
               <button className="action-btn" onClick={()=>setOpenC(o=>({...o,[item.id]:!o[item.id]}))}><icons.Comment/>{comments?.length||0}</button>
@@ -506,6 +506,78 @@ function FeedPage({me,goProfile,showNotif}){
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ── FEED VIDEO ITEM — autoplay/stop on scroll, no controls ───
+function FeedVideoItem({ src }) {
+  const videoRef = useRef();
+  const wrapRef = useRef();
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const vid = videoRef.current;
+        if (!vid) return;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+          vid.play().then(() => setPlaying(true)).catch(() => {});
+        } else {
+          vid.pause();
+          vid.currentTime = 0;
+          setPlaying(false);
+        }
+      },
+      { threshold: 0.6 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const toggle = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) { vid.play(); setPlaying(true); }
+    else { vid.pause(); setPlaying(false); }
+  };
+
+  return (
+    <div ref={wrapRef} style={{ position:"relative", background:"#000", maxHeight:480, overflow:"hidden" }}>
+      <video
+        ref={videoRef}
+        src={src}
+        loop muted={muted}
+        playsInline preload="metadata"
+        onClick={toggle}
+        style={{ width:"100%", maxHeight:480, objectFit:"cover", display:"block", cursor:"pointer" }}
+      />
+      {/* Pause overlay */}
+      {!playing && (
+        <div onClick={toggle} style={{
+          position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)",
+          background:"rgba(0,0,0,.45)", borderRadius:"50%", width:52, height:52,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          backdropFilter:"blur(4px)", cursor:"pointer",
+        }}>
+          <icons.Play />
+        </div>
+      )}
+      {/* Mute toggle */}
+      <button onClick={() => setMuted(m => !m)} style={{
+        position:"absolute", bottom:10, right:10,
+        background:"rgba(0,0,0,.5)", border:"none", borderRadius:"50%",
+        width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
+        color:"#fff", cursor:"pointer",
+      }}>
+        {muted
+          ? <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          : <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        }
+      </button>
     </div>
   );
 }
@@ -1003,7 +1075,25 @@ function ProfilePage({userId,me,isOwn,goProfile,showNotif}){
       </div>
       <div className="profile-tabs">{["posts","reels"].map(t=><div key={t} className={`profile-tab ${tab===t?"active":""}`} onClick={()=>setTab(t)}>{t.charAt(0).toUpperCase()+t.slice(1)}</div>)}</div>
       {tab==="posts"&&(posts.length===0?<div className="empty"><div className="empty-icon">📝</div><div className="empty-text">No posts yet</div></div>:posts.map(p=><div className="post-card" key={p.id}>{p.content&&<div className="post-body" style={{paddingTop:16}}>{p.content}</div>}{p.image_url&&<img src={p.image_url} alt="" className="post-image"/>}<div className="post-actions"><span className="action-btn"><icons.Heart/>{p.likes?.length||0}</span><span className="action-btn"><icons.Comment/>{p.comments?.length||0}</span></div></div>))}
-      {tab==="reels"&&(videos.length===0?<div className="empty"><div className="empty-icon">🎬</div><div className="empty-text">No reels yet</div></div>:<div className="reels-grid">{videos.map(v=><div className="reel-card" key={v.id}><video src={v.video_url} controls preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover"}}/><div className="reel-overlay"><div className="reel-caption">{v.caption||"No caption"}</div><div className="reel-meta"><icons.Heart/>{v.video_likes?.length||0}&nbsp;<icons.Comment/>{v.video_comments?.length||0}</div></div></div>)}</div>)}
+      {tab==="reels"&&(videos.length===0
+        ?<div className="empty"><div className="empty-icon">🎬</div><div className="empty-text">No reels yet</div></div>
+        :<div style={{display:"flex",flexDirection:"column",overflowY:"scroll",scrollSnapType:"y mandatory",height:"calc(100vh - 320px)",scrollbarWidth:"none",msOverflowStyle:"none"}}>
+          {videos.map(v=>(
+            <ReelItem key={v.id} v={v} me={me}
+              onLike={async()=>{
+                const liked=v.video_likes?.some(l=>l.user_id===me.id);
+                if(liked)await supabase.from("video_likes").delete().eq("video_id",v.id).eq("user_id",me.id);
+                else await supabase.from("video_likes").insert({video_id:v.id,user_id:me.id});
+                load();
+              }}
+              onComment={async(vid)=>{}}
+              goProfile={goProfile}
+              commentText=""
+              setCommentText={()=>{}}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
