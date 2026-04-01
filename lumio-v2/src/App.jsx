@@ -204,11 +204,10 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .ig-convo-item { display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; transition:background .15s; position:relative; }
 .ig-convo-item:hover { background:var(--bg); }
 .ig-convo-item.active { background:var(--accent2-light); }
-.ig-convo-dot { width:8px; height:8px; background:var(--accent2); border-radius:50%; position:absolute; right:16px; top:50%; transform:translateY(-50%); }
 .ig-chat { flex:1; display:flex; flex-direction:column; min-width:0; }
 .ig-chat-header { padding:14px 20px; border-bottom:1.5px solid var(--border2); display:flex; align-items:center; gap:12px; }
-.ig-chat-header-info { flex:1; }
-.ig-chat-header-name { font-size:15px; font-weight:700; }
+.ig-chat-header-info { flex:1; min-width:0; }
+.ig-chat-header-name { font-size:15px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ig-chat-header-handle { font-size:12px; color:var(--muted); }
 .ig-chat-messages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:4px; }
 .ig-msg-group { display:flex; flex-direction:column; margin-bottom:8px; }
@@ -219,15 +218,25 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .ig-bubble { padding:10px 14px; border-radius:20px; font-size:14px; line-height:1.5; word-break:break-word; }
 .mine .ig-bubble { background:var(--accent2); color:#fff; border-bottom-right-radius:4px; }
 .other .ig-bubble { background:var(--bg); color:var(--text); border-bottom-left-radius:4px; }
-.ig-bubble:not(:last-child) { border-radius:20px; }
 .ig-msg-time { font-size:10px; color:var(--muted); margin-top:2px; padding:0 4px; }
 .ig-chat-input { padding:12px 16px; border-top:1.5px solid var(--border2); display:flex; align-items:center; gap:10px; }
-.ig-chat-input input { flex:1; background:var(--bg); border-radius:999px; padding:11px 18px; font-size:14px; border:1.5px solid var(--border); transition:border .2s; }
+.ig-chat-input input { flex:1; background:var(--bg); border-radius:999px; padding:11px 18px; font-size:14px; border:1.5px solid var(--border); transition:border .2s; min-width:0; }
 .ig-chat-input input:focus { border-color:var(--accent2); outline:none; }
 .ig-send-btn { background:var(--accent2); color:#fff; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer; transition:opacity .18s; }
 .ig-send-btn:hover { opacity:.85; }
 .ig-no-chat { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--muted); gap:12px; }
-`;
+.ig-back-btn { display:none; background:none; border:none; cursor:pointer; color:var(--accent2); font-size:13px; font-weight:700; padding:6px 10px; border-radius:8px; margin-right:4px; }
+
+/* Mobile: single panel messages */
+@media (max-width: 680px) {
+  .ig-messages { height:calc(100vh - 136px); }
+  .ig-convo-list { width:100%; border-right:none; }
+  .ig-convo-list.hidden { display:none; }
+  .ig-chat { width:100%; }
+  .ig-chat.hidden { display:none; }
+  .ig-back-btn { display:flex; align-items:center; gap:4px; }
+  .ig-no-chat { display:none; }
+}`
 
 const icons = {
   Home: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -372,11 +381,67 @@ export default function App() {
 
 function AuthScreen(){
   const[tab,setTab]=useState("login");
-  const[form,setForm]=useState({name:"",username:"",email:"",password:""});
+  const[form,setForm]=useState({name:"",username:"",email:"",password:"",confirm:""});
   const[err,setErr]=useState("");const[ok,setOk]=useState("");const[busy,setBusy]=useState(false);
+  const[showPw,setShowPw]=useState(false);const[showConfirm,setShowConfirm]=useState(false);
   const set=k=>e=>setForm(f=>({...f,[k]:e.target.value}));
-  const login=async()=>{setErr("");setBusy(true);const{error}=await supabase.auth.signInWithPassword({email:form.email,password:form.password});if(error)setErr(error.message);setBusy(false);};
-  const signup=async()=>{setErr("");setOk("");if(!form.name||!form.username||!form.email||!form.password)return setErr("Please fill all fields.");if(form.username.includes(" "))return setErr("Username cannot contain spaces.");setBusy(true);const{error}=await supabase.auth.signUp({email:form.email,password:form.password,options:{data:{name:form.name,username:form.username.toLowerCase()}}});if(error)setErr(error.message);else setOk("Account created! Check your email, then log in.");setBusy(false);};
+
+  // Password strength checker
+  const pwChecks={
+    length: form.password.length>=8,
+    upper: /[A-Z]/.test(form.password),
+    lower: /[a-z]/.test(form.password),
+    number: /[0-9]/.test(form.password),
+    special: /[!@#$%^&*(),.?":{}|<>]/.test(form.password),
+  };
+  const pwStrength=Object.values(pwChecks).filter(Boolean).length;
+  const pwColor=pwStrength<=2?"#ff4b6e":pwStrength<=3?"#ff9a00":pwStrength<=4?"#3d5afe":"#00c48c";
+  const pwLabel=pwStrength<=2?"Weak":pwStrength<=3?"Fair":pwStrength<=4?"Good":"Strong";
+
+  const validate=()=>{
+    if(!form.name.trim()) return "Please enter your full name.";
+    if(form.name.trim().length<2) return "Name must be at least 2 characters.";
+    if(!form.username.trim()) return "Please choose a username.";
+    if(form.username.includes(" ")) return "Username cannot contain spaces.";
+    if(form.username.length<3) return "Username must be at least 3 characters.";
+    if(!/^[a-zA-Z0-9._]+$/.test(form.username)) return "Username can only contain letters, numbers, dots and underscores.";
+    if(!form.email.trim()) return "Please enter your email.";
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return "Please enter a valid email address.";
+    if(!form.password) return "Please enter a password.";
+    if(form.password.length<8) return "Password must be at least 8 characters.";
+    if(!pwChecks.upper) return "Password must contain at least one uppercase letter.";
+    if(!pwChecks.lower) return "Password must contain at least one lowercase letter.";
+    if(!pwChecks.number) return "Password must contain at least one number.";
+    if(form.password!==form.confirm) return "Passwords do not match.";
+    return null;
+  };
+
+  const login=async()=>{
+    setErr("");
+    if(!form.email.trim()) return setErr("Please enter your email.");
+    if(!form.password) return setErr("Please enter your password.");
+    setBusy(true);
+    const{error}=await supabase.auth.signInWithPassword({email:form.email,password:form.password});
+    if(error)setErr(error.message==="Invalid login credentials"?"Incorrect email or password. Please try again.":error.message);
+    setBusy(false);
+  };
+
+  const signup=async()=>{
+    setErr("");setOk("");
+    const validationErr=validate();
+    if(validationErr) return setErr(validationErr);
+    setBusy(true);
+    const{error}=await supabase.auth.signUp({
+      email:form.email,password:form.password,
+      options:{data:{name:form.name.trim(),username:form.username.toLowerCase().trim()}}
+    });
+    if(error)setErr(error.message);
+    else setOk("✅ Account created! Check your email to confirm, then log in.");
+    setBusy(false);
+  };
+
+  const EyeIcon=({show})=><svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{show?<><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>:<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}</svg>;
+
   return(
     <div className="auth-wrap"><div className="auth-card">
       <div className="auth-logo">Lumio</div>
@@ -385,11 +450,66 @@ function AuthScreen(){
         <button className={`auth-tab ${tab==="login"?"active":""}`} onClick={()=>{setTab("login");setErr("");setOk("");}}>Log In</button>
         <button className={`auth-tab ${tab==="signup"?"active":""}`} onClick={()=>{setTab("signup");setErr("");setOk("");}}>Sign Up</button>
       </div>
-      {tab==="signup"&&<><div className="field"><label>Full Name</label><input placeholder="Your name" value={form.name} onChange={set("name")}/></div><div className="field"><label>Username</label><input placeholder="no spaces" value={form.username} onChange={set("username")}/></div></>}
-      <div className="field"><label>Email</label><input type="email" placeholder="your@email.com" value={form.email} onChange={set("email")}/></div>
-      <div className="field"><label>Password</label><input type="password" placeholder="••••••••" value={form.password} onChange={set("password")} onKeyDown={e=>e.key==="Enter"&&(tab==="login"?login():signup())}/></div>
-      <button className="btn-primary" disabled={busy} onClick={tab==="login"?login:signup}>{busy?<span className="spinner"/>:tab==="login"?"Log In":"Create Account"}</button>
-      {err&&<div className="auth-err">{err}</div>}{ok&&<div className="auth-ok">{ok}</div>}
+
+      {tab==="signup"&&<>
+        <div className="field">
+          <label>Full Name</label>
+          <input placeholder="Your full name" value={form.name} onChange={set("name")}/>
+        </div>
+        <div className="field">
+          <label>Username</label>
+          <input placeholder="letters, numbers, . and _ only" value={form.username} onChange={set("username")}/>
+          {form.username&&!/^[a-zA-Z0-9._]+$/.test(form.username)&&<div style={{color:"var(--accent3)",fontSize:11,marginTop:4}}>Only letters, numbers, dots and underscores allowed</div>}
+        </div>
+      </>}
+
+      <div className="field">
+        <label>Email</label>
+        <input type="email" placeholder="your@email.com" value={form.email} onChange={set("email")}/>
+      </div>
+
+      <div className="field">
+        <label>Password</label>
+        <div style={{position:"relative"}}>
+          <input type={showPw?"text":"password"} placeholder={tab==="signup"?"Min 8 chars, uppercase, number…":"••••••••"} value={form.password} onChange={set("password")} style={{width:"100%",background:"var(--bg)",border:"1.5px solid var(--border)",borderRadius:12,padding:"13px 42px 13px 16px",fontSize:15,outline:"none",fontFamily:"inherit"}} onKeyDown={e=>tab==="login"&&e.key==="Enter"&&login()}/>
+          <button type="button" onClick={()=>setShowPw(s=>!s)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"var(--muted)"}}><EyeIcon show={showPw}/></button>
+        </div>
+        {/* Password strength bar — signup only */}
+        {tab==="signup"&&form.password&&(
+          <div style={{marginTop:8}}>
+            <div style={{display:"flex",gap:3,marginBottom:4}}>
+              {[1,2,3,4,5].map(i=><div key={i} style={{flex:1,height:3,borderRadius:2,background:i<=pwStrength?pwColor:"var(--border)",transition:"background .2s"}}/>)}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:11,color:pwColor,fontWeight:600}}>{pwLabel}</span>
+              <div style={{display:"flex",gap:8}}>
+                {[["8+ chars",pwChecks.length],["A-Z",pwChecks.upper],["a-z",pwChecks.lower],["0-9",pwChecks.number],["!@#",pwChecks.special]].map(([l,ok])=>(
+                  <span key={l} style={{fontSize:10,color:ok?"var(--green)":"var(--muted)",fontWeight:600}}>{ok?"✓":""}{l}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Confirm password — signup only */}
+      {tab==="signup"&&(
+        <div className="field">
+          <label>Confirm Password</label>
+          <div style={{position:"relative"}}>
+            <input type={showConfirm?"text":"password"} placeholder="Re-enter your password" value={form.confirm} onChange={set("confirm")} style={{width:"100%",background:"var(--bg)",border:`1.5px solid ${form.confirm&&form.confirm!==form.password?"var(--accent3)":form.confirm&&form.confirm===form.password?"var(--green)":"var(--border)"}`,borderRadius:12,padding:"13px 42px 13px 16px",fontSize:15,outline:"none",fontFamily:"inherit"}} onKeyDown={e=>e.key==="Enter"&&signup()}/>
+            <button type="button" onClick={()=>setShowConfirm(s=>!s)} style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"var(--muted)"}}><EyeIcon show={showConfirm}/></button>
+          </div>
+          {form.confirm&&form.confirm!==form.password&&<div style={{color:"var(--accent3)",fontSize:11,marginTop:4}}>Passwords do not match</div>}
+          {form.confirm&&form.confirm===form.password&&<div style={{color:"var(--green)",fontSize:11,marginTop:4}}>✓ Passwords match</div>}
+        </div>
+      )}
+
+      <button className="btn-primary" disabled={busy} onClick={tab==="login"?login:signup}>
+        {busy?<span className="spinner"/>:tab==="login"?"Log In":"Create Account"}
+      </button>
+      {err&&<div className="auth-err">{err}</div>}
+      {ok&&<div className="auth-ok">{ok}</div>}
     </div></div>
   );
 }
@@ -906,14 +1026,12 @@ function MessagesPage({me,goProfile}){
   const [msgs,setMsgs]=useState([]);
   const [input,setInput]=useState("");
   const [search,setSearch]=useState("");
+  const [showChat,setShowChat]=useState(false); // mobile: true=show chat, false=show list
   const endRef=useRef();
 
   useEffect(()=>{supabase.from("profiles").select("*").neq("id",me.id).then(({data})=>setUsers(data||[]));},[]);
-
-  useEffect(()=>{
-    if(!active)return;
-    loadMsgs();
-  },[active]);
+  useEffect(()=>{ if(!active)return; loadMsgs(); },[active]);
+  useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
 
   const loadMsgs=async()=>{
     const{data}=await supabase.from("messages").select("*")
@@ -922,8 +1040,6 @@ function MessagesPage({me,goProfile}){
     setMsgs(data||[]);
   };
 
-  useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
-
   const send=async()=>{
     if(!input.trim()||!active)return;
     const content=input.trim(); setInput("");
@@ -931,15 +1047,14 @@ function MessagesPage({me,goProfile}){
     loadMsgs();
   };
 
-  // Group consecutive messages from same sender
+  const selectUser=(u)=>{ setActive(u); setShowChat(true); };
+  const goBack=()=>{ setShowChat(false); };
+
   const grouped=[];
   msgs.forEach((m,i)=>{
     const prev=msgs[i-1];
-    if(prev&&prev.sender_id===m.sender_id){
-      grouped[grouped.length-1].bubbles.push(m);
-    } else {
-      grouped.push({sender_id:m.sender_id,bubbles:[m]});
-    }
+    if(prev&&prev.sender_id===m.sender_id){ grouped[grouped.length-1].bubbles.push(m); }
+    else { grouped.push({sender_id:m.sender_id,bubbles:[m]}); }
   });
 
   const filtered=users.filter(u=>!search||u.name.toLowerCase().includes(search.toLowerCase())||u.username.toLowerCase().includes(search.toLowerCase()));
@@ -948,8 +1063,8 @@ function MessagesPage({me,goProfile}){
     <div className="page-wide" style={{padding:0}}>
       <div className="ig-messages">
 
-        {/* LEFT — convo list */}
-        <div className="ig-convo-list">
+        {/* LEFT — convo list (hidden on mobile when chat is open) */}
+        <div className={`ig-convo-list ${showChat?"hidden":""}`}>
           <div className="ig-convo-header">Messages</div>
           <div className="ig-convo-search">
             <input placeholder="Search people…" value={search} onChange={e=>setSearch(e.target.value)}/>
@@ -957,8 +1072,8 @@ function MessagesPage({me,goProfile}){
           <div className="ig-convo-items">
             {filtered.length===0&&<div style={{padding:"20px",textAlign:"center",color:"var(--muted)",fontSize:13}}>No users found</div>}
             {filtered.map(u=>(
-              <div className={`ig-convo-item ${active?.id===u.id?"active":""}`} key={u.id} onClick={()=>setActive(u)}>
-                <Avatar profile={u} size={48} viewPic />
+              <div className={`ig-convo-item ${active?.id===u.id?"active":""}`} key={u.id} onClick={()=>selectUser(u)}>
+                <Avatar profile={u} size={48} viewPic/>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:600,fontSize:14}}>{u.name}</div>
                   <div style={{fontSize:12,color:"var(--muted)",marginTop:1}}>@{u.username}</div>
@@ -968,22 +1083,25 @@ function MessagesPage({me,goProfile}){
           </div>
         </div>
 
-        {/* RIGHT — chat area */}
+        {/* RIGHT — chat (hidden on mobile when list is shown) */}
         {active ? (
-          <div className="ig-chat">
-            {/* Chat header */}
+          <div className={`ig-chat ${!showChat?"hidden":""}`}>
             <div className="ig-chat-header">
-              <Avatar profile={active} size={42} viewPic style={{border:"2px solid var(--border)"}}/>
+              {/* Back button — mobile only */}
+              <button className="ig-back-btn" onClick={goBack}>
+                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              <Avatar profile={active} size={40} viewPic style={{border:"2px solid var(--border)"}}/>
               <div className="ig-chat-header-info">
                 <div className="ig-chat-header-name" onClick={()=>goProfile(active)} style={{cursor:"pointer"}}>{active.name}</div>
                 <div className="ig-chat-header-handle">@{active.username}</div>
               </div>
-              <button onClick={()=>goProfile(active)} style={{background:"none",border:"1.5px solid var(--border)",borderRadius:999,padding:"6px 14px",fontSize:13,fontWeight:600,cursor:"pointer",color:"var(--text)"}}>
-                View Profile
+              <button onClick={()=>goProfile(active)} style={{background:"none",border:"1.5px solid var(--border)",borderRadius:999,padding:"6px 12px",fontSize:12,fontWeight:600,cursor:"pointer",color:"var(--text)",whiteSpace:"nowrap",flexShrink:0}}>
+                Profile
               </button>
             </div>
 
-            {/* Messages */}
             <div className="ig-chat-messages">
               {msgs.length===0&&(
                 <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:"var(--muted)",gap:12,paddingTop:60}}>
@@ -1001,12 +1119,7 @@ function MessagesPage({me,goProfile}){
                     <div className="ig-msg-bubbles">
                       {g.bubbles.map((m,bi)=>(
                         <div key={m.id} className={`ig-bubble ${isMine?"mine":"other"}`}
-                          style={{
-                            borderRadius: g.bubbles.length===1 ? 20 :
-                              isMine
-                                ? `20px 20px ${bi===g.bubbles.length-1?"4px":"20px"} 20px`
-                                : `20px 20px 20px ${bi===g.bubbles.length-1?"4px":"20px"}`,
-                          }}>
+                          style={{borderRadius: g.bubbles.length===1?20:isMine?`20px 20px ${bi===g.bubbles.length-1?"4px":"20px"} 20px`:`20px 20px 20px ${bi===g.bubbles.length-1?"4px":"20px"}`}}>
                           {m.content}
                         </div>
                       ))}
@@ -1018,7 +1131,6 @@ function MessagesPage({me,goProfile}){
               <div ref={endRef}/>
             </div>
 
-            {/* Input */}
             <div className="ig-chat-input">
               <Avatar profile={me} size={32}/>
               <input
