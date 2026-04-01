@@ -132,6 +132,7 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .reel-overlay { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,.75)); padding:16px 12px 12px; color:#fff; }
 .reel-caption { font-size:13px; font-weight:500; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .reel-meta { display:flex; align-items:center; gap:10px; font-size:12px; opacity:.85; }
+.reel-feed::-webkit-scrollbar { display:none; }
 .reel-upload-box { background:var(--surface); border:2px dashed var(--border); border-radius:var(--radius); padding:40px 20px; text-align:center; margin-bottom:24px; cursor:pointer; transition:border-color .2s; }
 .reel-upload-box:hover { border-color:var(--accent2); }
 .video-preview { position:relative; margin-top:10px; border-radius:12px; overflow:hidden; background:#000; }
@@ -200,6 +201,7 @@ const icons = {
   Vid: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
   Logout: () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
   Upload: () => <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
+  Play: () => <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   X: () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
 };
 
@@ -427,96 +429,303 @@ function FeedPage({me,goProfile,showNotif}){
   );
 }
 
+// ── SINGLE REEL ITEM (autoplay + IntersectionObserver) ───────
+function ReelItem({ v, me, onLike, onComment, goProfile, commentText, setCommentText }) {
+  const videoRef = useRef();
+  const wrapRef = useRef();
+  const [playing, setPlaying] = useState(false);
+  const [showC, setShowC] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const liked = v.video_likes?.some(l => l.user_id === me.id);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const vid = videoRef.current;
+        if (!vid) return;
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
+          vid.play().then(() => setPlaying(true)).catch(() => {});
+        } else {
+          vid.pause();
+          vid.currentTime = 0;
+          setPlaying(false);
+        }
+      },
+      { threshold: 0.7 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const togglePlay = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) { vid.play(); setPlaying(true); }
+    else { vid.pause(); setPlaying(false); }
+  };
+
+  return (
+    <div ref={wrapRef} style={{
+      position: "relative", width: "100%", height: "calc(100vh - 130px)",
+      background: "#000", scrollSnapAlign: "start", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+    }}>
+      {/* VIDEO — no controls */}
+      <video
+        ref={videoRef}
+        src={v.video_url}
+        loop muted={muted}
+        playsInline preload="metadata"
+        onClick={togglePlay}
+        style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer", display: "block" }}
+      />
+
+      {/* Tap to pause indicator */}
+      {!playing && (
+        <div onClick={togglePlay} style={{
+          position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+          background: "rgba(0,0,0,.45)", borderRadius: "50%", width: 64, height: 64,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(4px)", cursor: "pointer",
+        }}>
+          <icons.Play />
+        </div>
+      )}
+
+      {/* Mute toggle top right */}
+      <button onClick={() => setMuted(m => !m)} style={{
+        position: "absolute", top: 16, right: 16,
+        background: "rgba(0,0,0,.4)", border: "none", borderRadius: "50%",
+        width: 38, height: 38, display: "flex", alignItems: "center", justifyContent: "center",
+        color: "#fff", cursor: "pointer", backdropFilter: "blur(4px)",
+      }}>
+        {muted
+          ? <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        }
+      </button>
+
+      {/* Bottom overlay — caption + user */}
+      <div style={{
+        position: "absolute", bottom: 0, left: 0, right: 72,
+        background: "linear-gradient(transparent, rgba(0,0,0,.75))",
+        padding: "40px 16px 20px",
+      }}>
+        <div onClick={() => goProfile(v.profiles)} style={{
+          display: "flex", alignItems: "center", gap: 8, marginBottom: 10, cursor: "pointer",
+        }}>
+          <Avatar profile={v.profiles} size={34} style={{ border: "2px solid #fff" }} />
+          <div>
+            <div style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{v.profiles?.name}</div>
+            <div style={{ color: "rgba(255,255,255,.7)", fontSize: 12 }}>@{v.profiles?.username}</div>
+          </div>
+        </div>
+        {v.caption && <div style={{ color: "#fff", fontSize: 14, lineHeight: 1.5, marginBottom: 4 }}>{v.caption}</div>}
+        <div style={{ color: "rgba(255,255,255,.6)", fontSize: 12 }}>{timeAgo(v.created_at)}</div>
+      </div>
+
+      {/* Right side action buttons */}
+      <div style={{
+        position: "absolute", right: 12, bottom: 80,
+        display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+      }}>
+        {/* Like */}
+        <button onClick={() => onLike(v)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{
+            background: "rgba(0,0,0,.4)", borderRadius: "50%", width: 44, height: 44,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: liked ? "var(--accent3)" : "#fff", backdropFilter: "blur(4px)",
+          }}>
+            <icons.Heart filled={liked} />
+          </div>
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 600 }}>{v.video_likes?.length || 0}</span>
+        </button>
+
+        {/* Comment */}
+        <button onClick={() => setShowC(s => !s)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{
+            background: "rgba(0,0,0,.4)", borderRadius: "50%", width: 44, height: 44,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#fff", backdropFilter: "blur(4px)",
+          }}>
+            <icons.Comment />
+          </div>
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 600 }}>{v.video_comments?.length || 0}</span>
+        </button>
+
+        {/* Share */}
+        <button onClick={() => { navigator.clipboard?.writeText(window.location.href); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{
+            background: "rgba(0,0,0,.4)", borderRadius: "50%", width: 44, height: 44,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            color: "#fff", backdropFilter: "blur(4px)",
+          }}>
+            <icons.Share />
+          </div>
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 600 }}>Share</span>
+        </button>
+      </div>
+
+      {/* Comments drawer */}
+      {showC && (
+        <div onClick={e => e.stopPropagation()} style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          background: "var(--surface)", borderRadius: "20px 20px 0 0",
+          padding: "16px", maxHeight: "55%", display: "flex", flexDirection: "column",
+          boxShadow: "0 -4px 24px rgba(0,0,0,.2)",
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Comments</div>
+            <button onClick={() => setShowC(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)" }}><icons.X /></button>
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", marginBottom: 12 }}>
+            {v.video_comments?.length === 0 && <div style={{ color: "var(--muted)", fontSize: 13, textAlign: "center", padding: "20px 0" }}>No comments yet</div>}
+            {v.video_comments?.map(c => (
+              <div className="comment" key={c.id}>
+                <Avatar profile={c.profiles} size={30} />
+                <div className="comment-bubble">
+                  <div className="comment-author">{c.profiles?.name}</div>
+                  <div className="comment-text">{c.content}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="comment-input-row">
+            <Avatar profile={me} size={30} />
+            <input className="comment-input" placeholder="Add a comment…"
+              value={commentText || ""}
+              onChange={e => setCommentText(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && onComment(v.id)} />
+            <button className="comment-send" onClick={() => onComment(v.id)}>Post</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── REELS PAGE ────────────────────────────────────────────────
 function ReelsPage({me,showNotif,goProfile}){
-  const[videos,setVideos]=useState([]);
-  const[uploading,setUploading]=useState(false);
-  const[caption,setCaption]=useState("");
-  const[videoFile,setVideoFile]=useState(null);
-  const[videoPreview,setVideoPreview]=useState(null);
-  const[openC,setOpenC]=useState({});
-  const[cTexts,setCTexts]=useState({});
-  const fileRef=useRef();
+  const [videos, setVideos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [caption, setCaption] = useState("");
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreview, setVideoPreview] = useState(null);
+  const [showUpload, setShowUpload] = useState(false);
+  const [cTexts, setCTexts] = useState({});
+  const fileRef = useRef();
 
-  useEffect(()=>{load();},[]);
+  useEffect(() => { load(); }, []);
 
-  const load=async()=>{
-    const{data}=await supabase.from("videos").select("*,profiles(*),video_likes(user_id),video_comments(id,content,created_at,profiles(*))").order("created_at",{ascending:false});
-    setVideos(data||[]);
+  const load = async () => {
+    const { data } = await supabase.from("videos")
+      .select("*,profiles(*),video_likes(user_id),video_comments(id,content,created_at,profiles(*))")
+      .order("created_at", { ascending: false });
+    setVideos(data || []);
   };
 
-  const pickVideo=e=>{
-    const f=e.target.files[0];if(!f)return;
-    const url=URL.createObjectURL(f);const el=document.createElement("video");el.src=url;
-    el.onloadedmetadata=()=>{if(el.duration>60){showNotif("Max 60 seconds!",true);return;}setVideoFile(f);setVideoPreview(url);};
+  const pickVideo = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const url = URL.createObjectURL(f);
+    const el = document.createElement("video"); el.src = url;
+    el.onloadedmetadata = () => {
+      if (el.duration > 60) { showNotif("Max 60 seconds!", true); return; }
+      setVideoFile(f); setVideoPreview(url);
+    };
   };
 
-  const upload=async()=>{
-    if(!videoFile)return;setUploading(true);
-    const ext=videoFile.name.split(".").pop();const path=`${me.id}/${Date.now()}.${ext}`;
-    const{error}=await supabase.storage.from("videos").upload(path,videoFile);
-    if(error){showNotif("Upload failed: "+error.message,true);setUploading(false);return;}
-    const{data:{publicUrl}}=supabase.storage.from("videos").getPublicUrl(path);
-    await supabase.from("videos").insert({user_id:me.id,caption:caption.trim(),video_url:publicUrl});
-    setVideoFile(null);setVideoPreview(null);setCaption("");setUploading(false);
-    showNotif("Reel uploaded! 🎬");load();
+  const upload = async () => {
+    if (!videoFile) return; setUploading(true);
+    const ext = videoFile.name.split(".").pop();
+    const path = `${me.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("videos").upload(path, videoFile);
+    if (error) { showNotif("Upload failed: " + error.message, true); setUploading(false); return; }
+    const { data: { publicUrl } } = supabase.storage.from("videos").getPublicUrl(path);
+    await supabase.from("videos").insert({ user_id: me.id, caption: caption.trim(), video_url: publicUrl });
+    setVideoFile(null); setVideoPreview(null); setCaption(""); setUploading(false); setShowUpload(false);
+    showNotif("Reel uploaded! 🎬"); load();
   };
 
-  const toggleLike=async v=>{
-    const liked=v.video_likes?.some(l=>l.user_id===me.id);
-    if(liked)await supabase.from("video_likes").delete().eq("video_id",v.id).eq("user_id",me.id);
-    else await supabase.from("video_likes").insert({video_id:v.id,user_id:me.id});
+  const toggleLike = async v => {
+    const liked = v.video_likes?.some(l => l.user_id === me.id);
+    if (liked) await supabase.from("video_likes").delete().eq("video_id", v.id).eq("user_id", me.id);
+    else await supabase.from("video_likes").insert({ video_id: v.id, user_id: me.id });
     load();
   };
 
-  const addComment=async vid=>{
-    const c=cTexts[vid]?.trim();if(!c)return;
-    await supabase.from("video_comments").insert({video_id:vid,user_id:me.id,content:c});
-    setCTexts(t=>({...t,[vid]:""}));load();
+  const addComment = async vid => {
+    const c = cTexts[vid]?.trim(); if (!c) return;
+    await supabase.from("video_comments").insert({ video_id: vid, user_id: me.id, content: c });
+    setCTexts(t => ({ ...t, [vid]: "" })); load();
   };
 
-  return(
-    <div className="page-wide">
-      <div style={{fontSize:22,fontWeight:700,marginBottom:24}}>Reels</div>
-      <div className="reel-upload-box" onClick={()=>!videoFile&&fileRef.current.click()}>
-        <input ref={fileRef} type="file" accept="video/*" style={{display:"none"}} onChange={pickVideo}/>
-        {!videoFile?(<><div style={{marginBottom:12}}><icons.Upload/></div><div style={{fontWeight:600,marginBottom:4}}>Upload a Short Video</div><div style={{color:"var(--muted)",fontSize:13}}>Max 60 seconds · MP4, MOV, WebM</div></>):(
-          <div onClick={e=>e.stopPropagation()}>
-            <video src={videoPreview} controls style={{width:"100%",maxHeight:240,borderRadius:12,marginBottom:12}}/>
-            <input style={{width:"100%",background:"var(--bg)",border:"1.5px solid var(--border)",borderRadius:10,padding:"10px 14px",fontSize:14,marginBottom:12}} placeholder="Add a caption…" value={caption} onChange={e=>setCaption(e.target.value)}/>
-            <div style={{display:"flex",gap:10,justifyContent:"center"}}>
-              <button className="btn-outline" onClick={()=>{setVideoFile(null);setVideoPreview(null);setCaption("");}}>Cancel</button>
-              <button className="btn-blue" disabled={uploading} onClick={upload}>{uploading?"Uploading…":"Post Reel 🎬"}</button>
+  return (
+    <div style={{ position: "relative" }}>
+
+      {/* Upload button — floating top right */}
+      <button onClick={() => setShowUpload(true)} style={{
+        position: "fixed", top: 64, right: 20, zIndex: 300,
+        background: "var(--accent2)", color: "#fff", border: "none",
+        borderRadius: 999, padding: "8px 16px", fontSize: 13, fontWeight: 700,
+        display: "flex", alignItems: "center", gap: 6, cursor: "pointer",
+        boxShadow: "0 4px 16px rgba(61,90,254,.4)",
+      }}>
+        + Upload
+      </button>
+
+      {/* Upload modal */}
+      {showUpload && (
+        <div className="modal-bg" onClick={() => { setShowUpload(false); setVideoFile(null); setVideoPreview(null); setCaption(""); }}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-title">📹 Upload a Reel</div>
+            {!videoFile ? (
+              <div onClick={() => fileRef.current.click()} style={{
+                border: "2px dashed var(--border)", borderRadius: 12, padding: "32px 20px",
+                textAlign: "center", cursor: "pointer", marginBottom: 16,
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>🎬</div>
+                <div style={{ fontWeight: 600 }}>Tap to choose video</div>
+                <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>Max 60 seconds</div>
+                <input ref={fileRef} type="file" accept="video/*" style={{ display: "none" }} onChange={pickVideo} />
+              </div>
+            ) : (
+              <>
+                <video src={videoPreview} controls style={{ width: "100%", maxHeight: 220, borderRadius: 12, marginBottom: 12 }} />
+                <input style={{ width: "100%", background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "11px 14px", fontSize: 14, marginBottom: 16, fontFamily: "inherit", outline: "none" }}
+                  placeholder="Add a caption…" value={caption} onChange={e => setCaption(e.target.value)} />
+              </>
+            )}
+            <div className="modal-actions">
+              <button className="btn-outline" onClick={() => { setShowUpload(false); setVideoFile(null); setVideoPreview(null); setCaption(""); }}>Cancel</button>
+              {videoFile && <button className="btn-blue" disabled={uploading} onClick={upload}>{uploading ? "Uploading…" : "Post Reel 🎬"}</button>}
             </div>
           </div>
-        )}
-      </div>
-      {videos.length===0?<div className="empty"><div className="empty-icon">🎬</div><div className="empty-text">No reels yet — upload the first one!</div></div>
-      :<div className="reels-grid">{videos.map(v=>{
-        const liked=v.video_likes?.some(l=>l.user_id===me.id);const showC=openC[v.id];
-        return(
-          <div key={v.id} style={{background:"var(--surface)",border:"1.5px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
-            <div className="reel-card" style={{borderRadius:"var(--radius) var(--radius) 0 0"}}>
-              <video src={v.video_url} controls preload="metadata" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-              <div className="reel-overlay">
-                <div className="reel-caption">{v.caption||"No caption"}</div>
-                <div className="reel-meta" onClick={()=>goProfile(v.profiles)} style={{cursor:"pointer"}}><Avatar profile={v.profiles} size={22}/><span>@{v.profiles?.username}</span><span>· {timeAgo(v.created_at)}</span></div>
-              </div>
-            </div>
-            <div style={{padding:"8px 12px",display:"flex",gap:4}}>
-              <button className={`action-btn ${liked?"liked":""}`} onClick={()=>toggleLike(v)}><icons.Heart filled={liked}/>{v.video_likes?.length||0}</button>
-              <button className="action-btn" onClick={()=>setOpenC(o=>({...o,[v.id]:!o[v.id]}))}><icons.Comment/>{v.video_comments?.length||0}</button>
-            </div>
-            {showC&&<div className="comments-section">
-              {v.video_comments?.map(c=><div className="comment" key={c.id}><Avatar profile={c.profiles} size={28}/><div className="comment-bubble"><div className="comment-author">{c.profiles?.name}</div><div className="comment-text">{c.content}</div></div></div>)}
-              <div className="comment-input-row">
-                <Avatar profile={me} size={28}/>
-                <input className="comment-input" placeholder="Comment…" value={cTexts[v.id]||""} onChange={e=>setCTexts(t=>({...t,[v.id]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addComment(v.id)}/>
-                <button className="comment-send" onClick={()=>addComment(v.id)}>Post</button>
-              </div>
-            </div>}
-          </div>
-        );
-      })}</div>}
+        </div>
+      )}
+
+      {/* Reels feed — full screen vertical scroll snap */}
+      {videos.length === 0
+        ? <div className="empty" style={{ marginTop: 60 }}><div className="empty-icon">🎬</div><div className="empty-text">No reels yet — be the first!</div></div>
+        : <div style={{
+            display: "flex", flexDirection: "column",
+            overflowY: "scroll", scrollSnapType: "y mandatory",
+            height: "calc(100vh - 130px)",
+            scrollbarWidth: "none", msOverflowStyle: "none",
+          }}>
+          {videos.map(v => (
+            <ReelItem
+              key={v.id} v={v} me={me}
+              onLike={toggleLike}
+              onComment={addComment}
+              goProfile={goProfile}
+              commentText={cTexts[v.id]}
+              setCommentText={val => setCTexts(t => ({ ...t, [v.id]: val }))}
+            />
+          ))}
+        </div>
+      }
     </div>
   );
 }
