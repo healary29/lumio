@@ -38,6 +38,30 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .topbar-right { display:flex; align-items:center; gap:10px; }
 .topbar-settings { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); color:var(--muted); transition:all .18s; }
 .topbar-settings:hover { background:var(--accent2-light); color:var(--accent2); transform:rotate(45deg); }
+.topbar-bell { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); color:var(--muted); transition:all .18s; position:relative; }
+.topbar-bell:hover { background:var(--accent2-light); color:var(--accent2); }
+.topbar-bell.active { color:var(--accent2); background:var(--accent2-light); }
+
+/* ── NOTIFICATIONS ── */
+.notif-page { max-width:620px; margin:0 auto; }
+.notif-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.notif-title { font-size:22px; font-weight:700; }
+.notif-mark-all { font-size:13px; color:var(--accent2); font-weight:600; cursor:pointer; background:none; border:none; }
+.notif-mark-all:hover { opacity:.8; }
+.notif-item { display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); margin-bottom:8px; cursor:pointer; transition:all .18s; position:relative; }
+.notif-item:hover { box-shadow:var(--shadow); transform:translateY(-1px); }
+.notif-item.unread { background:#f8f9ff; border-color:#dde2ff; }
+.notif-item.unread::before { content:""; position:absolute; left:0; top:50%; transform:translateY(-50%); width:4px; height:60%; background:var(--accent2); border-radius:0 4px 4px 0; }
+.notif-icon { font-size:20px; width:40px; height:40px; background:var(--bg); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.notif-content { flex:1; min-width:0; }
+.notif-msg { font-size:14px; color:var(--text); line-height:1.4; }
+.notif-msg strong { font-weight:700; }
+.notif-time { font-size:11px; color:var(--muted); margin-top:3px; }
+.notif-unread-dot { width:8px; height:8px; background:var(--accent2); border-radius:50%; flex-shrink:0; }
+.notif-empty { text-align:center; padding:60px 20px; color:var(--muted); }
+.notif-tabs { display:flex; border-bottom:1.5px solid var(--border2); margin-bottom:16px; }
+.notif-tab { padding:10px 16px; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .18s; }
+.notif-tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
 
 /* ── BOTTOM TAB BAR ── */
 .bottom-nav {
@@ -236,7 +260,30 @@ input,textarea { font-family:inherit; outline:none; border:none; }
   .ig-chat.hidden { display:none; }
   .ig-back-btn { display:flex; align-items:center; gap:4px; }
   .ig-no-chat { display:none; }
-}`
+}
+
+/* ── NOTIFICATIONS ── */
+.notif-page { max-width:620px; margin:0 auto; }
+.notif-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.notif-title { font-size:22px; font-weight:700; display:flex; align-items:center; }
+.notif-mark-all { background:none; border:1.5px solid var(--border); border-radius:999px; padding:6px 14px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; transition:all .18s; }
+.notif-mark-all:hover { background:var(--accent2-light); color:var(--accent2); border-color:var(--accent2); }
+.notif-tabs { display:flex; gap:6px; margin-bottom:20px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.notif-tabs::-webkit-scrollbar { display:none; }
+.notif-tab { padding:7px 14px; border-radius:999px; font-size:13px; font-weight:600; color:var(--muted); background:var(--bg); border:1.5px solid var(--border); cursor:pointer; white-space:nowrap; transition:all .18s; }
+.notif-tab.active { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+.notif-item { display:flex; align-items:center; gap:12px; padding:14px 16px; background:var(--surface); border-radius:var(--radius); border:1.5px solid var(--border); margin-bottom:8px; cursor:pointer; transition:box-shadow .18s; }
+.notif-item:hover { box-shadow:var(--shadow); }
+.notif-item.unread { background:#fafcff; border-color:#d0daff; }
+.notif-icon { font-size:20px; flex-shrink:0; }
+.notif-content { flex:1; min-width:0; }
+.notif-msg { font-size:14px; font-weight:500; color:var(--text); margin-bottom:2px; }
+.notif-time { font-size:12px; color:var(--muted); }
+.notif-unread-dot { width:8px; height:8px; background:var(--accent2); border-radius:50%; flex-shrink:0; }
+.notif-empty { text-align:center; padding:60px 20px; color:var(--muted); }
+.topbar-bell { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); color:var(--muted); transition:all .18s; position:relative; }
+.topbar-bell:hover { background:var(--accent2-light); color:var(--accent2); }
+.topbar-bell.active { color:var(--accent2); background:var(--accent2-light); }`
 
 const icons = {
   Home: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -254,6 +301,7 @@ const icons = {
   Logout: () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
   Upload: () => <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
   Play: () => <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+  Bell: ({ count }) => <span style={{position:"relative",display:"inline-flex"}}><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>{count>0&&<span style={{position:"absolute",top:-6,right:-6,background:"#ff4b6e",color:"#fff",fontSize:9,fontWeight:700,borderRadius:999,minWidth:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}}>{count>99?"99+":count}</span>}</span>,
   X: () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
 };
 
@@ -311,6 +359,7 @@ export default function App() {
   const [page,setPage]=useState("feed");
   const [viewProfile,setViewProfile]=useState(null);
   const [notif,setNotif]=useState(null);
+  const [unreadCount,setUnreadCount]=useState(0);
   const showNotif=useCallback((msg,err=false)=>{setNotif({msg,err});setTimeout(()=>setNotif(null),3000);},[]);
 
   useEffect(()=>{
@@ -318,6 +367,22 @@ export default function App() {
     const{data:{subscription}}=supabase.auth.onAuthStateChange((_e,session)=>{setSession(session);if(session)fetchProfile(session.user.id);else{setProfile(null);setLoading(false);}});
     return()=>subscription.unsubscribe();
   },[]);
+
+  useEffect(()=>{
+    if(!profile)return;
+    fetchUnread();
+    // Real-time notifications
+    const channel=supabase.channel("notifications")
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${profile.id}`},()=>fetchUnread())
+      .subscribe();
+    return()=>supabase.removeChannel(channel);
+  },[profile]);
+
+  const fetchUnread=async()=>{
+    if(!profile)return;
+    const{count}=await supabase.from("notifications").select("*",{count:"exact",head:true}).eq("user_id",profile.id).eq("read",false);
+    setUnreadCount(count||0);
+  };
 
   const fetchProfile=async(uid)=>{const{data}=await supabase.from("profiles").select("*").eq("id",uid).single();setProfile(data);setLoading(false);};
   const logout=async()=>{await supabase.auth.signOut();setPage("feed");setViewProfile(null);};
@@ -331,6 +396,7 @@ export default function App() {
     {id:"search",label:"Search",Icon:icons.Search},
     {id:"reels",label:"Reels",Icon:icons.Video},
     {id:"messages",label:"Messages",Icon:icons.Msg},
+    {id:"notifications",label:"Alerts",Icon:()=><icons.Bell count={page!=="notifications"?unreadCount:0}/>},
     {id:"profile",label:"Profile",Icon:icons.User},
     {id:"settings",label:"Settings",Icon:icons.Settings},
   ];
@@ -344,6 +410,9 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-logo">Lumio</div>
         <div className="topbar-right">
+          <button className={`topbar-bell ${page==="notifications"?"active":""}`} onClick={()=>{setPage("notifications");setViewProfile(null);}}>
+            <icons.Bell count={page!=="notifications"?unreadCount:0}/>
+          </button>
           <Avatar profile={profile} size={32} onClick={()=>{setViewProfile(null);setPage("profile");}} style={{border:"2px solid var(--border)"}}/>
           <button className="topbar-settings" onClick={()=>{setViewProfile(null);setPage("settings");}} title="Settings"><icons.Settings/></button>
         </div>
@@ -355,6 +424,7 @@ export default function App() {
         {page==="search"&&<SearchPage me={profile} goProfile={goProfile} showNotif={showNotif}/>}
         {page==="reels"&&<ReelsPage me={profile} showNotif={showNotif} goProfile={goProfile}/>}
         {page==="messages"&&<MessagesPage me={profile} goProfile={goProfile}/>}
+        {page==="notifications"&&<NotificationsPage me={profile} goProfile={goProfile} onRead={fetchUnread}/>}
         {page==="profile"&&!viewProfile&&<ProfilePage userId={profile.id} me={profile} isOwn goProfile={goProfile} showNotif={showNotif}/>}
         {page==="profile"&&viewProfile&&<ProfilePage userId={viewProfile.id} me={profile} isOwn={false} goProfile={goProfile} showNotif={showNotif}/>}
         {page==="settings"&&<SettingsPage me={profile} setProfile={setProfile} showNotif={showNotif} logout={logout}/>}
@@ -376,6 +446,92 @@ export default function App() {
       </nav>
 
     </div></>
+  );
+}
+
+// ── NOTIFICATIONS PAGE ────────────────────────────────────────
+function NotificationsPage({ me, goProfile, onRead }) {
+  const [notifs, setNotifs] = useState([]);
+  const [tab, setTab] = useState("all");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { load(); }, []);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from("notifications")
+      .select("*, actor:actor_id(id,name,username,avatar_url)")
+      .eq("user_id", me.id)
+      .order("created_at", { ascending: false })
+      .limit(60);
+    setNotifs(data || []);
+    setLoading(false);
+    // Mark all as read when page opens
+    await supabase.from("notifications").update({ read: true }).eq("user_id", me.id).eq("read", false);
+    onRead();
+  };
+
+  const markAllRead = async () => {
+    await supabase.from("notifications").update({ read: true }).eq("user_id", me.id);
+    setNotifs(n => n.map(x => ({ ...x, read: true })));
+    onRead();
+  };
+
+  const deleteNotif = async (id) => {
+    await supabase.from("notifications").delete().eq("id", id);
+    setNotifs(n => n.filter(x => x.id !== id));
+  };
+
+  const getIcon = (type) => ({
+    like: "❤️", comment: "💬", follow: "👤",
+    video_like: "❤️", video_comment: "💬",
+  }[type] || "🔔");
+
+  const filtered = tab === "all" ? notifs : tab === "unread" ? notifs.filter(n => !n.read) : notifs.filter(n => n.type === tab || (tab === "likes" && (n.type === "like" || n.type === "video_like")) || (tab === "comments" && (n.type === "comment" || n.type === "video_comment")));
+
+  const unreadCount = notifs.filter(n => !n.read).length;
+
+  return (
+    <div className="notif-page">
+      <div className="notif-header">
+        <div className="notif-title">Notifications {unreadCount > 0 && <span style={{ background: "var(--accent2)", color: "#fff", fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "2px 8px", marginLeft: 8 }}>{unreadCount}</span>}</div>
+        {unreadCount > 0 && <button className="notif-mark-all" onClick={markAllRead}>Mark all read</button>}
+      </div>
+
+      <div className="notif-tabs">
+        {[["all","All"],["unread","Unread"],["likes","Likes"],["comments","Comments"],["follow","Follows"]].map(([id,label])=>(
+          <div key={id} className={`notif-tab ${tab===id?"active":""}`} onClick={()=>setTab(id)}>{label}</div>
+        ))}
+      </div>
+
+      {loading && <div className="empty"><div className="spinner dark"/></div>}
+
+      {!loading && filtered.length === 0 && (
+        <div className="notif-empty">
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🔔</div>
+          <div style={{ fontWeight: 600, marginBottom: 4 }}>No notifications yet</div>
+          <div style={{ fontSize: 13 }}>When people like, comment or follow you, you'll see it here</div>
+        </div>
+      )}
+
+      {filtered.map(n => (
+        <div key={n.id} className={`notif-item ${!n.read ? "unread" : ""}`}
+          onClick={() => { if (n.actor) goProfile(n.actor); }}>
+          <div className="notif-icon">{getIcon(n.type)}</div>
+          <Avatar profile={n.actor} size={38} viewPic onClick={() => n.actor && goProfile(n.actor)} />
+          <div className="notif-content">
+            <div className="notif-msg">{n.message}</div>
+            <div className="notif-time">{timeAgo(n.created_at)}</div>
+          </div>
+          {!n.read && <div className="notif-unread-dot" />}
+          <button onClick={e => { e.stopPropagation(); deleteNotif(n.id); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--muted)", padding: "4px 6px", borderRadius: 8, marginLeft: 4 }}>
+            <icons.X />
+          </button>
+        </div>
+      ))}
+    </div>
   );
 }
 
