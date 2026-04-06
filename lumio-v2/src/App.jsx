@@ -63,7 +63,21 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .notif-tab { padding:10px 16px; font-size:14px; font-weight:500; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .18s; }
 .notif-tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
 
-/* ── BOTTOM TAB BAR ── */
+/* ── DOWNLOAD BUTTON ── */
+.media-wrap { position:relative; display:block; }
+.download-btn { position:absolute; bottom:10px; right:10px; background:rgba(0,0,0,.55); color:#fff; border:none; border-radius:999px; padding:7px 12px; font-size:12px; font-weight:600; display:flex; align-items:center; gap:5px; cursor:pointer; backdrop-filter:blur(6px); transition:background .18s; z-index:10; opacity:0; transition:opacity .2s; }
+.media-wrap:hover .download-btn { opacity:1; }
+.download-btn:hover { background:rgba(0,0,0,.8); }
+.reel-download-btn { position:absolute; top:56px; left:14px; background:rgba(0,0,0,.45); color:#fff; border:none; border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer; backdrop-filter:blur(6px); z-index:10; }
+.reel-download-btn:hover { background:rgba(0,0,0,.75); }
+
+/* ── PUSH NOTIFICATION PROMPT ── */
+.push-prompt { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--accent); color:#fff; border-radius:16px; padding:14px 18px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow2); z-index:500; animation:slideUp .3s ease; max-width:360px; width:92%; }
+@keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+.push-prompt-text { flex:1; font-size:13px; line-height:1.5; }
+.push-prompt-title { font-weight:700; font-size:14px; margin-bottom:3px; }
+.push-allow { background:#fff; color:var(--accent); border-radius:999px; padding:8px 16px; font-size:13px; font-weight:700; border:none; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.push-deny { background:none; border:none; color:rgba(255,255,255,.55); cursor:pointer; font-size:22px; line-height:1; flex-shrink:0; padding:2px; }
 .bottom-nav {
   position:fixed; bottom:0; left:0; right:0;
   height:64px;
@@ -302,6 +316,7 @@ const icons = {
   Upload: () => <svg width="28" height="28" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>,
   Play: () => <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   Bell: ({ count }) => <span style={{position:"relative",display:"inline-flex"}}><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>{count>0&&<span style={{position:"absolute",top:-6,right:-6,background:"#ff4b6e",color:"#fff",fontSize:9,fontWeight:700,borderRadius:999,minWidth:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}}>{count>99?"99+":count}</span>}</span>,
+  Download: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   X: () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
 };
 
@@ -352,6 +367,23 @@ function Avatar({ profile, size=40, onClick, style={}, viewPic=false }) {
 
 function timeAgo(ts){const s=Math.floor((Date.now()-new Date(ts))/1000);if(s<60)return"just now";if(s<3600)return`${Math.floor(s/60)}m ago`;if(s<86400)return`${Math.floor(s/3600)}h ago`;return`${Math.floor(s/86400)}d ago`;}
 
+// ── DOWNLOAD HELPER ───────────────────────────────────────────
+async function downloadMedia(url, filename) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename || 'lumio-download';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch {
+    window.open(url, '_blank');
+  }
+}
+
 export default function App() {
   const [session,setSession]=useState(null);
   const [profile,setProfile]=useState(null);
@@ -360,6 +392,7 @@ export default function App() {
   const [viewProfile,setViewProfile]=useState(null);
   const [notif,setNotif]=useState(null);
   const [unreadCount,setUnreadCount]=useState(0);
+  const [showPushPrompt,setShowPushPrompt]=useState(false);
   const showNotif=useCallback((msg,err=false)=>{setNotif({msg,err});setTimeout(()=>setNotif(null),3000);},[]);
 
   useEffect(()=>{
@@ -373,7 +406,13 @@ export default function App() {
     fetchUnread();
     // Real-time notifications
     const channel=supabase.channel("notifications")
-      .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${profile.id}`},()=>fetchUnread())
+      .on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications",filter:`user_id=eq.${profile.id}`},(payload)=>{
+        fetchUnread();
+        // Fire browser push notification
+        if(Notification.permission==="granted"&&payload.new?.message){
+          new Notification("Lumio",{body:payload.new.message,icon:"/icon.png"});
+        }
+      })
       .subscribe();
     return()=>supabase.removeChannel(channel);
   },[profile]);
@@ -387,6 +426,41 @@ export default function App() {
   const fetchProfile=async(uid)=>{const{data}=await supabase.from("profiles").select("*").eq("id",uid).single();setProfile(data);setLoading(false);};
   const logout=async()=>{await supabase.auth.signOut();setPage("feed");setViewProfile(null);};
   const goProfile=(p)=>{setViewProfile(p?.id===profile?.id?null:p);setPage("profile");};
+
+  // Push notification setup
+  useEffect(()=>{
+    if(!profile)return;
+    // Show prompt after 3 seconds if not already granted/denied
+    const timer=setTimeout(()=>{
+      if("Notification" in window && Notification.permission==="default"){
+        setShowPushPrompt(true);
+      }
+    },3000);
+    return()=>clearTimeout(timer);
+  },[profile]);
+
+  const requestPushPermission=async()=>{
+    setShowPushPrompt(false);
+    if(!("Notification" in window))return;
+    const permission=await Notification.requestPermission();
+    if(permission==="granted"){
+      showNotif("🔔 Push notifications enabled!");
+      // Register service worker for push
+      if("serviceWorker" in navigator){
+        try{
+          const reg=await navigator.serviceWorker.register("/sw.js");
+          console.log("SW registered",reg);
+        }catch(e){console.log("SW registration skipped");}
+      }
+    }
+  };
+
+  // Send browser push notification
+  const sendBrowserNotif=(title,body,icon="🌟")=>{
+    if(Notification.permission==="granted"){
+      new Notification(title,{body,icon:"/icon.png"});
+    }
+  };
 
   if(loading)return<><style>{STYLE}</style><div className="loading-screen"><div className="loading-logo">Lumio</div><div className="spinner dark"/></div></>;
   if(!session||!profile)return<><style>{STYLE}</style><AuthScreen/></>;
@@ -404,6 +478,18 @@ export default function App() {
   return(
     <><style>{STYLE}</style>
     {notif&&<div className={`notif ${notif.err?"err":""}`}>{notif.msg}</div>}
+
+    {/* PUSH NOTIFICATION PROMPT */}
+    {showPushPrompt&&(
+      <div className="push-prompt">
+        <div className="push-prompt-text">
+          <div className="push-prompt-title">🔔 Stay in the loop</div>
+          Enable notifications for likes, comments and follows
+        </div>
+        <button className="push-allow" onClick={requestPushPermission}>Allow</button>
+        <button className="push-deny" onClick={()=>setShowPushPrompt(false)}>×</button>
+      </div>
+    )}
     <div className="app">
 
       {/* TOP HEADER */}
@@ -764,8 +850,15 @@ function FeedPage({me,goProfile,showNotif}){
             </div>
             {iv&&<span className="video-badge"><icons.Vid/>Short Video</span>}
             {(item.content||item.caption)&&<div className="post-body">{item.content||item.caption}</div>}
-            {!iv&&item.image_url&&<img src={item.image_url} alt="" className="post-image"/>}
-            {iv&&item.video_url&&<FeedVideoItem src={item.video_url}/>}
+            {!iv&&item.image_url&&(
+              <div className="media-wrap">
+                <img src={item.image_url} alt="" className="post-image"/>
+                <button className="download-btn" onClick={e=>{e.stopPropagation();downloadMedia(item.image_url,`lumio-image-${item.id}.jpg`);}}>
+                  <icons.Download/>Download
+                </button>
+              </div>
+            )}
+            {iv&&item.video_url&&<FeedVideoItem src={item.video_url} itemId={item.id}/>}
             <div className="post-actions">
               <button className={`action-btn ${liked?"liked":""}`} onClick={()=>toggleLike(item)}><icons.Heart filled={liked}/>{likes?.length||0}</button>
               <button className="action-btn" onClick={()=>setOpenC(o=>({...o,[item.id]:!o[item.id]}))}><icons.Comment/>{comments?.length||0}</button>
@@ -786,8 +879,7 @@ function FeedPage({me,goProfile,showNotif}){
   );
 }
 
-// ── FEED VIDEO ITEM — autoplay/stop on scroll, no controls ───
-function FeedVideoItem({ src }) {
+function FeedVideoItem({ src, itemId }) {
   const videoRef = useRef();
   const wrapRef = useRef();
   const [playing, setPlaying] = useState(false);
@@ -831,7 +923,6 @@ function FeedVideoItem({ src }) {
         onClick={toggle}
         style={{ width:"100%", maxHeight:480, objectFit:"cover", display:"block", cursor:"pointer" }}
       />
-      {/* Pause overlay */}
       {!playing && (
         <div onClick={toggle} style={{
           position:"absolute", top:"50%", left:"50%", transform:"translate(-50%,-50%)",
@@ -844,7 +935,7 @@ function FeedVideoItem({ src }) {
       )}
       {/* Mute toggle */}
       <button onClick={() => setMuted(m => !m)} style={{
-        position:"absolute", bottom:10, right:10,
+        position:"absolute", bottom:10, right:60,
         background:"rgba(0,0,0,.5)", border:"none", borderRadius:"50%",
         width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
         color:"#fff", cursor:"pointer",
@@ -853,6 +944,15 @@ function FeedVideoItem({ src }) {
           ? <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           : <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         }
+      </button>
+      {/* Download button */}
+      <button onClick={()=>downloadMedia(src,`lumio-video-${itemId||Date.now()}.mp4`)} style={{
+        position:"absolute", bottom:10, right:10,
+        background:"rgba(0,0,0,.5)", border:"none", borderRadius:"50%",
+        width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center",
+        color:"#fff", cursor:"pointer",
+      }}>
+        <icons.Download/>
       </button>
     </div>
   );
@@ -934,6 +1034,16 @@ function ReelItem({ v, me, onLike, onComment, goProfile, commentText, setComment
           ? <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         }
+      </button>
+
+      {/* Download reel button */}
+      <button onClick={()=>downloadMedia(v.video_url,`lumio-reel-${v.id}.mp4`)} style={{
+        position:"absolute", top:62, right:16,
+        background:"rgba(0,0,0,.4)", border:"none", borderRadius:"50%",
+        width:38, height:38, display:"flex", alignItems:"center", justifyContent:"center",
+        color:"#fff", cursor:"pointer", backdropFilter:"blur(4px)",
+      }} title="Download reel">
+        <icons.Download/>
       </button>
 
       {/* Bottom overlay — caption + user */}
