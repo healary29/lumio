@@ -297,7 +297,61 @@ input,textarea { font-family:inherit; outline:none; border:none; }
 .notif-empty { text-align:center; padding:60px 20px; color:var(--muted); }
 .topbar-bell { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; background:var(--bg); color:var(--muted); transition:all .18s; position:relative; }
 .topbar-bell:hover { background:var(--accent2-light); color:var(--accent2); }
-.topbar-bell.active { color:var(--accent2); background:var(--accent2-light); }`
+.topbar-bell.active { color:var(--accent2); background:var(--accent2-light); }
+/* ── STORIES BAR ── */
+.stories-bar { display:flex; gap:14px; overflow-x:auto; padding:0 0 16px; scrollbar-width:none; margin-bottom:8px; }
+.stories-bar::-webkit-scrollbar { display:none; }
+.story-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; flex-shrink:0; }
+.story-ring { width:64px; height:64px; border-radius:50%; padding:2.5px;
+  background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+  flex-shrink:0; }
+.story-ring.seen { background:var(--border2); }
+.story-ring-inner { width:100%; height:100%; border-radius:50%; border:2.5px solid var(--surface); overflow:hidden; background:var(--bg); display:flex; align-items:center; justify-content:center; }
+.story-ring-inner img { width:100%; height:100%; object-fit:cover; }
+.story-ring-inner .story-initial { font-size:20px; font-weight:700; color:#fff; }
+.story-add { width:59px; height:59px; border-radius:50%; background:var(--bg); border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--muted); }
+.story-name { font-size:11px; color:var(--text); font-weight:500; max-width:64px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* ── STORY VIEWER ── */
+.story-viewer-bg { position:fixed; inset:0; background:#000; z-index:2000; display:flex; align-items:center; justify-content:center; }
+.story-viewer-img { max-width:100vw; max-height:100vh; object-fit:contain; }
+.story-viewer-top { position:absolute; top:0; left:0; right:0; padding:16px 16px 0; display:flex; flex-direction:column; gap:10px; z-index:10; }
+.story-progress-bars { display:flex; gap:4px; }
+.story-progress-bar-bg { flex:1; height:2px; background:rgba(255,255,255,.35); border-radius:2px; overflow:hidden; }
+.story-progress-bar-fill { height:100%; background:#fff; border-radius:2px; transition:width .1s linear; }
+.story-viewer-user { display:flex; align-items:center; gap:10px; }
+.story-viewer-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,.15); border:none; color:#fff; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; z-index:11; }
+.story-sides { position:absolute; inset:0; display:flex; }
+.story-side { flex:1; cursor:pointer; }
+
+/* ── DOUBLE-TAP LIKE HEART ── */
+.heart-anim-wrap { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; z-index:20; }
+.heart-anim { font-size:80px; animation:heartPop .7s cubic-bezier(.25,.46,.45,.94) forwards; }
+@keyframes heartPop {
+  0%   { opacity:0; transform:scale(0.3); }
+  20%  { opacity:1; transform:scale(1.25); }
+  50%  { opacity:1; transform:scale(1.0); }
+  80%  { opacity:0.8; transform:scale(1.1); }
+  100% { opacity:0; transform:scale(1.3); }
+}
+
+/* ── EXPLORE GRID ── */
+.explore-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; margin-top:16px; }
+.explore-cell { position:relative; aspect-ratio:1; overflow:hidden; cursor:pointer; background:var(--border2); }
+.explore-cell img, .explore-cell video { width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s; }
+.explore-cell:hover img, .explore-cell:hover video { transform:scale(1.06); }
+.explore-cell-overlay { position:absolute; inset:0; background:rgba(0,0,0,0); transition:background .2s; display:flex; align-items:center; justify-content:center; gap:14px; }
+.explore-cell:hover .explore-cell-overlay { background:rgba(0,0,0,.38); }
+.explore-cell-stat { color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; gap:4px; opacity:0; transition:opacity .2s; }
+.explore-cell:hover .explore-cell-stat { opacity:1; }
+.explore-video-badge { position:absolute; top:7px; right:7px; color:#fff; filter:drop-shadow(0 1px 3px rgba(0,0,0,.7)); }
+
+/* ── EXPLORE SEARCH TABS ── */
+.explore-tabs { display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; scrollbar-width:none; }
+.explore-tabs::-webkit-scrollbar { display:none; }
+.explore-tab { padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap; border:1.5px solid var(--border); color:var(--muted); background:var(--surface); transition:all .18s; }
+.explore-tab.active { background:var(--accent2); color:#fff; border-color:var(--accent2); }
+`
 
 const icons = {
   Home: () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
@@ -317,8 +371,131 @@ const icons = {
   Play: () => <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
   Bell: ({ count }) => <span style={{position:"relative",display:"inline-flex"}}><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>{count>0&&<span style={{position:"absolute",top:-6,right:-6,background:"#ff4b6e",color:"#fff",fontSize:9,fontWeight:700,borderRadius:999,minWidth:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px"}}>{count>99?"99+":count}</span>}</span>,
   Download: () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Bookmark: ({filled}) => <svg width="18" height="18" fill={filled?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>,
   X: () => <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
 };
+
+
+// ── STORIES BAR ──────────────────────────────────────────────
+function StoriesBar({ me, users, goProfile }) {
+  const [viewStory, setViewStory] = useState(null); // {profile, seen}
+  const [seenIds, setSeenIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lumio_seen_stories') || '[]'); } catch { return []; }
+  });
+
+  const storyUsers = [me, ...users.filter(u => u.id !== me.id).slice(0, 12)];
+
+  const openStory = (profile) => {
+    setViewStory(profile);
+    if (!seenIds.includes(profile.id)) {
+      const next = [...seenIds, profile.id];
+      setSeenIds(next);
+      localStorage.setItem('lumio_seen_stories', JSON.stringify(next));
+    }
+  };
+
+  const gs = ["linear-gradient(135deg,#3d5afe,#ff4b6e)","linear-gradient(135deg,#00c48c,#3d5afe)","linear-gradient(135deg,#ff9a00,#ff4b6e)","linear-gradient(135deg,#a855f7,#3d5afe)"];
+
+  return (
+    <>
+      <div className="stories-bar">
+        {storyUsers.map((u, i) => {
+          const seen = seenIds.includes(u.id) && u.id !== me.id;
+          const isMe = u.id === me.id;
+          const g = gs[(u.username?.charCodeAt(0)||0) % gs.length];
+          return (
+            <div className="story-item" key={u.id} onClick={() => openStory(u)}>
+              <div className={`story-ring ${seen ? 'seen' : ''}`}>
+                <div className="story-ring-inner" style={!u.avatar_url ? {background: g} : {}}>
+                  {u.avatar_url
+                    ? <img src={u.avatar_url} alt="" />
+                    : <span className="story-initial" style={{fontSize:22,fontWeight:700,color:"#fff"}}>
+                        {(u.name||u.username||"?")[0].toUpperCase()}
+                      </span>
+                  }
+                </div>
+              </div>
+              <span className="story-name">{isMe ? "You" : u.name?.split(" ")[0] || u.username}</span>
+            </div>
+          );
+        })}
+      </div>
+      {viewStory && <StoryViewer profile={viewStory} onClose={() => setViewStory(null)} goProfile={goProfile} isMe={viewStory.id === me.id} />}
+    </>
+  );
+}
+
+function StoryViewer({ profile, onClose, goProfile, isMe }) {
+  const [progress, setProgress] = useState(0);
+  const duration = 5000;
+  const gs = ["linear-gradient(135deg,#3d5afe,#ff4b6e)","linear-gradient(135deg,#00c48c,#3d5afe)","linear-gradient(135deg,#ff9a00,#ff4b6e)","linear-gradient(135deg,#a855f7,#3d5afe)"];
+  const g = gs[(profile?.username?.charCodeAt(0)||0) % gs.length];
+
+  useEffect(() => {
+    const start = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const pct = Math.min((elapsed / duration) * 100, 100);
+      setProgress(pct);
+      if (pct < 100) requestAnimationFrame(tick);
+      else onClose();
+    };
+    const raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  useEffect(() => {
+    const onKey = e => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  return (
+    <div className="story-viewer-bg" onClick={onClose}>
+      {/* Progress bar */}
+      <div className="story-viewer-top" onClick={e => e.stopPropagation()}>
+        <div className="story-progress-bars">
+          <div className="story-progress-bar-bg">
+            <div className="story-progress-bar-fill" style={{width: progress + "%"}} />
+          </div>
+        </div>
+        <div className="story-viewer-user" onClick={() => { goProfile(profile); onClose(); }}>
+          <div style={{width:36,height:36,borderRadius:"50%",overflow:"hidden",border:"2px solid #fff",background:g,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            {profile.avatar_url
+              ? <img src={profile.avatar_url} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+              : <span style={{color:"#fff",fontWeight:700,fontSize:14}}>{(profile.name||"?")[0].toUpperCase()}</span>
+            }
+          </div>
+          <div>
+            <div style={{color:"#fff",fontWeight:700,fontSize:14}}>{profile.name}</div>
+            <div style={{color:"rgba(255,255,255,.65)",fontSize:12}}>@{profile.username}</div>
+          </div>
+        </div>
+      </div>
+      <button className="story-viewer-close" onClick={onClose}>✕</button>
+
+      {/* Story content — avatar large */}
+      <div onClick={e => e.stopPropagation()} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16,padding:"0 24px"}}>
+        <div style={{width:160,height:160,borderRadius:"50%",background:g,display:"flex",alignItems:"center",justifyContent:"center",border:"3px solid rgba(255,255,255,.2)",overflow:"hidden"}}>
+          {profile.avatar_url
+            ? <img src={profile.avatar_url} style={{width:"100%",height:"100%",objectFit:"cover"}} />
+            : <span style={{fontSize:72,fontWeight:700,color:"#fff"}}>{(profile.name||"?")[0].toUpperCase()}</span>
+          }
+        </div>
+        <div style={{color:"#fff",fontSize:18,fontWeight:700}}>{profile.name}</div>
+        <div style={{color:"rgba(255,255,255,.5)",fontSize:13}}>
+          {isMe ? "This is how others see your profile" : `@${profile.username} · tap to visit profile`}
+        </div>
+      </div>
+
+      {/* Tap sides to close/advance */}
+      <div className="story-sides" onClick={onClose}>
+        <div className="story-side"/>
+        <div className="story-side"/>
+      </div>
+    </div>
+  );
+}
 
 // ── PROFILE PIC VIEWER ───────────────────────────────────────
 function ProfilePicViewer({ profile, onClose }) {
@@ -362,6 +539,34 @@ function Avatar({ profile, size=40, onClick, style={}, viewPic=false }) {
       </div>
       {showPic && <ProfilePicViewer profile={profile} onClose={() => setShowPic(false)} />}
     </>
+  );
+}
+
+
+// ── DOUBLE-TAP LIKE ───────────────────────────────────────────
+function DoubleTapWrapper({ children, onDoubleTap, style }) {
+  const lastTap = useRef(0);
+  const [showHeart, setShowHeart] = useState(false);
+
+  const handleTap = (e) => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      onDoubleTap();
+      setShowHeart(true);
+      setTimeout(() => setShowHeart(false), 700);
+    }
+    lastTap.current = now;
+  };
+
+  return (
+    <div style={{position:"relative", ...style}} onClick={handleTap}>
+      {children}
+      {showHeart && (
+        <div className="heart-anim-wrap">
+          <div className="heart-anim">❤️</div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -768,7 +973,9 @@ function FeedPage({me,goProfile,showNotif}){
   const[cTexts,setCTexts]=useState({});
   const imgRef=useRef();const vidRef=useRef();
 
-  useEffect(()=>{load();},[]);
+  const[storyUsers,setStoryUsers]=useState([]);
+  useEffect(()=>{load();loadStoryUsers();},[]);
+  const loadStoryUsers=async()=>{const{data}=await supabase.from("profiles").select("*").neq("id",me.id).limit(15);setStoryUsers(data||[]);};
 
   const load=async()=>{
     const[{data:p},{data:v}]=await Promise.all([
@@ -820,6 +1027,7 @@ function FeedPage({me,goProfile,showNotif}){
   return(
     <div className="page">
       <div className="feed-header"><div className="feed-title">Home</div></div>
+      <StoriesBar me={me} users={storyUsers} goProfile={goProfile}/>
       <div className="create-post-card">
         <div className="create-row">
           <Avatar profile={me} size={40}/>
@@ -851,18 +1059,21 @@ function FeedPage({me,goProfile,showNotif}){
             {iv&&<span className="video-badge"><icons.Vid/>Short Video</span>}
             {(item.content||item.caption)&&<div className="post-body">{item.content||item.caption}</div>}
             {!iv&&item.image_url&&(
+              <DoubleTapWrapper onDoubleTap={()=>!liked&&toggleLike(item)} style={{}}>
               <div className="media-wrap">
                 <img src={item.image_url} alt="" className="post-image"/>
                 <button className="download-btn" onClick={e=>{e.stopPropagation();downloadMedia(item.image_url,`lumio-image-${item.id}.jpg`);}}>
                   <icons.Download/>Download
                 </button>
               </div>
+              </DoubleTapWrapper>
             )}
             {iv&&item.video_url&&<FeedVideoItem src={item.video_url} itemId={item.id}/>}
             <div className="post-actions">
               <button className={`action-btn ${liked?"liked":""}`} onClick={()=>toggleLike(item)}><icons.Heart filled={liked}/>{likes?.length||0}</button>
               <button className="action-btn" onClick={()=>setOpenC(o=>({...o,[item.id]:!o[item.id]}))}><icons.Comment/>{comments?.length||0}</button>
               <button className="action-btn" onClick={()=>{navigator.clipboard?.writeText(window.location.href);showNotif("Link copied! 🔗");}}><icons.Share/></button>
+              <button className="action-btn" style={{marginLeft:"auto"}} onClick={()=>showNotif("Saved! 🔖")}><icons.Bookmark/></button>
             </div>
             {showC&&<div className="comments-section">
               {comments?.map(c=><div className="comment" key={c.id}><Avatar profile={c.profiles} size={30} onClick={()=>goProfile(c.profiles)}/><div className="comment-bubble"><div className="comment-author">{c.profiles?.name}</div><div className="comment-text">{c.content}</div></div></div>)}
@@ -1270,18 +1481,97 @@ function ReelsPage({me,showNotif,goProfile}){
 }
 
 function SearchPage({me,goProfile,showNotif}){
-  const[q,setQ]=useState("");const[users,setUsers]=useState([]);const[follows,setFollows]=useState([]);
-  useEffect(()=>{loadUsers();loadFollows();},[]);
+  const[q,setQ]=useState("");
+  const[users,setUsers]=useState([]);
+  const[follows,setFollows]=useState([]);
+  const[posts,setPosts]=useState([]);
+  const[videos,setVideos]=useState([]);
+  const[exploreTab,setExploreTab]=useState("all");
+
+  useEffect(()=>{loadUsers();loadFollows();loadExplore();},[]);
+
   const loadUsers=async()=>{const{data}=await supabase.from("profiles").select("*").neq("id",me.id).limit(40);setUsers(data||[]);};
   const loadFollows=async()=>{const{data}=await supabase.from("follows").select("following_id").eq("follower_id",me.id);setFollows((data||[]).map(f=>f.following_id));};
-  const toggleFollow=async uid=>{if(follows.includes(uid)){await supabase.from("follows").delete().eq("follower_id",me.id).eq("following_id",uid);setFollows(f=>f.filter(x=>x!==uid));showNotif("Unfollowed");}else{await supabase.from("follows").insert({follower_id:me.id,following_id:uid});setFollows(f=>[...f,uid]);showNotif("Following! 🎉");}};
-  const filtered=users.filter(u=>!q||u.name.toLowerCase().includes(q.toLowerCase())||u.username.toLowerCase().includes(q.toLowerCase()));
+  const loadExplore=async()=>{
+    const[{data:p},{data:v}]=await Promise.all([
+      supabase.from("posts").select("*,profiles(*),likes(user_id),comments(id)").not("image_url","is",null).order("created_at",{ascending:false}).limit(30),
+      supabase.from("videos").select("*,profiles(*),video_likes(user_id),video_comments(id)").order("created_at",{ascending:false}).limit(20),
+    ]);
+    setPosts(p||[]);
+    setVideos(v||[]);
+  };
+  const toggleFollow=async uid=>{
+    if(follows.includes(uid)){await supabase.from("follows").delete().eq("follower_id",me.id).eq("following_id",uid);setFollows(f=>f.filter(x=>x!==uid));showNotif("Unfollowed");}
+    else{await supabase.from("follows").insert({follower_id:me.id,following_id:uid});setFollows(f=>[...f,uid]);showNotif("Following! 🎉");}
+  };
+
+  const filteredUsers=users.filter(u=>!q||u.name.toLowerCase().includes(q.toLowerCase())||u.username.toLowerCase().includes(q.toLowerCase()));
+
+  // Explore grid items
+  const explorePosts = posts.map(p=>({...p,_t:"post"}));
+  const exploreVids  = videos.map(v=>({...v,_t:"video"}));
+  const allItems = exploreTab==="photos" ? explorePosts : exploreTab==="videos" ? exploreVids : [...explorePosts,...exploreVids].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
   return(
     <div className="page-wide">
-      <div style={{fontSize:22,fontWeight:700,marginBottom:24}}>Search</div>
-      <div className="search-bar-wrap"><span className="search-icon"><icons.Search/></span><input className="search-bar" placeholder="Search people…" value={q} onChange={e=>setQ(e.target.value)}/></div>
-      {filtered.length===0?<div className="empty"><div className="empty-icon">🔍</div><div className="empty-text">No users found</div></div>
-      :<div className="user-grid">{filtered.map(u=><div className="user-card" key={u.id}><div style={{display:"flex",justifyContent:"center",marginBottom:12}}><Avatar profile={u} size={64} onClick={()=>goProfile(u)}/></div><div className="user-card-name" onClick={()=>goProfile(u)}>{u.name}</div><div className="user-card-handle">@{u.username}</div><button className={`follow-btn ${follows.includes(u.id)?"following":""}`} onClick={()=>toggleFollow(u.id)}>{follows.includes(u.id)?"Following":"Follow"}</button></div>)}</div>}
+      <div style={{fontSize:22,fontWeight:700,marginBottom:16}}>Explore</div>
+      <div className="search-bar-wrap">
+        <span className="search-icon"><icons.Search/></span>
+        <input className="search-bar" placeholder="Search people…" value={q} onChange={e=>setQ(e.target.value)}/>
+      </div>
+
+      {q ? (
+        // PEOPLE RESULTS
+        filteredUsers.length===0
+          ? <div className="empty"><div className="empty-icon">🔍</div><div className="empty-text">No users found</div></div>
+          : <div className="user-grid">
+              {filteredUsers.map(u=>(
+                <div className="user-card" key={u.id}>
+                  <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+                    <Avatar profile={u} size={64} onClick={()=>goProfile(u)}/>
+                  </div>
+                  <div className="user-card-name" onClick={()=>goProfile(u)}>{u.name}</div>
+                  <div className="user-card-handle">@{u.username}</div>
+                  <button className={`follow-btn ${follows.includes(u.id)?"following":""}`} onClick={()=>toggleFollow(u.id)}>
+                    {follows.includes(u.id)?"Following":"Follow"}
+                  </button>
+                </div>
+              ))}
+            </div>
+      ) : (
+        // EXPLORE GRID
+        <>
+          <div className="explore-tabs">
+            {[["all","✨ All"],["photos","📷 Photos"],["videos","🎬 Videos"]].map(([id,label])=>(
+              <div key={id} className={`explore-tab ${exploreTab===id?"active":""}`} onClick={()=>setExploreTab(id)}>{label}</div>
+            ))}
+          </div>
+
+          {allItems.length===0 && <div className="empty"><div className="empty-icon">🔍</div><div className="empty-text">Nothing here yet</div></div>}
+
+          <div className="explore-grid">
+            {allItems.map(item=>{
+              const isVid = item._t==="video";
+              const thumb = isVid ? item.thumbnail_url : item.image_url;
+              const likes = isVid ? item.video_likes?.length : item.likes?.length;
+              const comments = isVid ? item.video_comments?.length : item.comments?.length;
+              return(
+                <div className="explore-cell" key={item.id} onClick={()=>goProfile(item.profiles)}>
+                  {isVid
+                    ? <video src={item.video_url} muted playsInline preload="metadata"/>
+                    : <img src={item.image_url} alt="" loading="lazy"/>
+                  }
+                  {isVid && <div className="explore-video-badge"><icons.Video/></div>}
+                  <div className="explore-cell-overlay">
+                    <span className="explore-cell-stat"><icons.Heart filled/>  {likes||0}</span>
+                    <span className="explore-cell-stat"><icons.Comment/>  {comments||0}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
